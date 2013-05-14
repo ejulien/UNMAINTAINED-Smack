@@ -1,0 +1,50 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+
+NDK-BUILD script generator by Emmanuel Julien 2013
+-------------------------------------------------------------------------------
+
+1) Usage
+-------------------------------------------------------------------------------
+
+Import the android_mk module from your build script and call its generate
+method. eg:
+
+import android_mk
+
+android_mk.generate(make, toolchain, 'build/jni')
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+The following configuration keys are specific to this generator:
+
+* cflags        -   Compiler flags.
+
+    'short-commands'    -   Use the short command directive for projects
+                            referencing too many inputs and failing with the
+                            error message: "Argument list too long'.
+
+3) Target toolchains
+-------------------------------------------------------------------------------
+
+The following toolchain combinations are supported by this extension:
+
+* target        -   Target machine
+
+    'android'           Target the Android OS.
+
+* arch          -   Target architecture
+
+    'ARMv7', 'ARMv5', 'Mips', 'x86' and 'all'
+
+4) Limitation
+-------------------------------------------------------------------------------
+
+The build and architecture configuration are implemented in a separate file
+and need to be manually configured before each build. As far as I know, there
+is no other way to do that in an Eclipse project.
+
+It might be possible to pass the BUILD and ARCH variables from the command line
+and if you know how to do that, please contribute ;).

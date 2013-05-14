@@ -1,0 +1,53 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+
+QT-Addin 1.1 extension for the vs2010 generator by Emmanuel Julien 2013
+-------------------------------------------------------------------------------
+
+1) Usage
+-------------------------------------------------------------------------------
+
+Import the vs2010_qt module from your build script, install it and call the
+vs2010 generator with a build configured to use Qt. eg:
+
+import vs2010_qt
+
+toolchain = [
+    {
+        'target': 'windows',
+        'arch': ['x86'],
+    },
+]
+
+# install the extension over the vs2010 generator
+vs2010_qt.install()
+
+make = smack()
+
+make.setProject('prj')
+make.setFiles('main.cpp')
+make.set('qt', '4.8.4')
+make.set('qt_modules', ['core', 'gui'])
+
+vs2010.generate(make, toolchain, 'build/vs')
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+This generator adds the following specific configuration keys:
+
+* qt            -   Specify the Qt version for this context (eg. '4.8.4').
+                    Note: This flag is required to enable Qt support.
+
+* qt_res        -   The resource files to watch for modification that should
+                    trigger the qrc (Qt resource file) generation.
+
+* qt_modules    -   The Qt modules used by a context.                   
+
+    'core', 'gui', 'opengl', 'script', 'webkit', 'network'
+
+3) Target toolchains
+-------------------------------------------------------------------------------
+
+This extension has only been tested on the windows x86 toolchain.

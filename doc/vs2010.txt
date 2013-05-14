@@ -1,0 +1,36 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+
+Visual Studio 2010 solution/project generator by Emmanuel Julien 2013
+-------------------------------------------------------------------------------
+
+1) Usage
+-------------------------------------------------------------------------------
+
+Import the vs2010 module from your build script and call its generate method.
+eg:
+
+import vs2010
+
+vs2010.generate(make, toolchain, 'build/vs')
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+For the most part, the vs2010 generator supports all core flags and directives.
+This generator does not add any specific configuration keys.
+
+3) Target toolchains
+-------------------------------------------------------------------------------
+
+The following toolchain combinations are supported by this generator:
+
+* target        -   Target machine
+
+    'windows'           Target the Microsoft windows OS.
+
+* arch          -   Target architecture
+
+    'x86'               32-bit Intel compatible
+    'x64'               64-bit Intel compatible

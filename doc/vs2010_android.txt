@@ -1,0 +1,53 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+
+VSAndroid extension for the vs2010 generator by Emmanuel Julien 2013
+-------------------------------------------------------------------------------
+
+1) Usage
+-------------------------------------------------------------------------------
+
+Import the vs2010_android module from your build script, install it and call
+the vs2010 generator with an Android toolchain as the target. eg:
+
+import vs2010_android
+
+toolchain = [
+    {
+        'target': 'android',
+        'arch': ['ARMv7', 'ARMv5', 'Mips', 'x86', 'All'],
+    },
+]
+
+# install the extension over the vs2010 generator
+vs2010_android.install()
+
+# generate the Android toolchain
+vs2010.generate(make, toolchain, 'build/vs')
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+This generator does not add any specific configuration keys.
+
+3) Target toolchains
+-------------------------------------------------------------------------------
+
+The following toolchain combinations are supported by this extension:
+
+* target        -   Target machine
+
+    'android'           Target the Android OS.
+
+* arch          -   Target architecture
+
+    'ARMv7', 'ARMv5', 'Mips', 'x86' and 'all'
+
+* android_toolset       -   Android toolset version to use.
+
+    '4.6' and '4.4.3'
+
+* android_api_level     -   Target API level
+
+    '4.0', '2.3', '2.2' and '2.0'

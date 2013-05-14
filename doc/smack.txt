@@ -1,0 +1,149 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+-------------------------------------------------------------------------------
+
+Opening Statement
+-------------------------------------------------------------------------------
+
+smack is a tool by programmers for programmers, meant to remain simple.
+The goal is to have it work 75% of the time and remain easy to fix for the
+remaining 25% that fails.
+
+1) Context
+-------------------------------------------------------------------------------
+
+A context is a configurable filter holding configuration keys. The smack object
+maintains a context object in which configuration keys and values are stored.
+
+* workspace     Top-level entity (workspace, namespace, solution, etc...)
+* project       Usually a group of files that are built and linked to
+                produce a binary
+* build         Groups configuration keys for under a common build (usually
+                Debug and Release)
+* target        The target platform ['windows', 'osx', 'linux']
+* arch          The target architecture ['x86', 'x64']
+
+Configuration keys are inherited from the current stage of the generator to
+the top-level entity. For example, when evaluating a configuration key for a
+project the generator will retrieve all keys for the project context and its
+parent workspace.
+
+Example:
+
+km = smack()
+km.set('cflags', 'use-utf8')    # current context is */*/*/*/*,
+                                # all workspace, project, build on any
+                                # target and arch will use utf8
+km.setWorkspace('ws')
+km.setBuild('Debug')
+km.set('cflags', ['O0', debug]) # current context is ws/*/Debug/*/* all
+                                # projects in the ws workspace in Debug
+                                # build will use O0 and debug no matter
+                                # the target architecture
+km.setBuild(None)               # current context is ws/*/*/*/*,
+                                # can be written km.setBuild()
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+The following keys should ideally be supported by all generators.
+
+* depends       -   Project dependencies
+                    include_path, lib_path, define and proper link order are
+                    filled automatically for the projects forming a dependency
+                    chain.
+
+* files         -   Files to compile.
+* output_path   -   Output path for the generated makefile/solution/project.
+* bin_path      -   Output path for the generated binaries.
+* bin_suffix    -   Suffix to be appended to the generated binaries name.
+* include_path  -   Additional include path.
+* lib_path      -   Additional include library.
+* type          -   Type of binary to produce ['staticlib', 'dynamiclib',
+                    'executable']
+
+* use_pch       -   Set the precompiled header file.
+* create_pch    -   Specify the source file that should control the creation
+                    of the precompiled header file.
+
+* pflags        -   Project flags.
+
+    'skip_build'        Do not build the project.
+    'skip_files'        Do not build specific files.
+
+* cflags        -   Compiler flags.
+
+    'debug'             Indicates a debug build.
+
+    'O0' to 'O3'        Level of optimization (3 max. optimization)
+    'W0' to 'W4'        Warning level
+
+    'maxsize'           Optimize for size.
+    'maxspeed'          Optimize for speed.
+
+    'fp-fast'           Fast floating-point
+    'fp-precise'        Precise floating-point
+    'fp-strict'         Strict floating-point
+
+    'use-utf8'          Use UTF-8 unicode (wide-char otherwise).
+    'use-rtti'          Enable RTTI
+    'use-exceptions'    Enable exception
+
+    'use-sse2'          Enable SSE2
+
+* define        -   Preprocessor flags to define.
+
+* link          -   Librairies or project to link.
+
+* subsystem     -
+    'native'            Native application (default)
+    'console'           Force console application
+
+3) Target toolchains
+-------------------------------------------------------------------------------
+
+When calling the generate method of a generator you provide the list of
+toolchains to generate the makefile for. A toolchain is the combination of a
+target machine and an architecture.
+
+eg.
+
+toolchain =
+[
+    {
+        'target': 'windows',
+        'arch': ['x86', 'x64'],
+    },
+]
+
+import vs2010
+vs2010.generate(make, toolchain, 'build/vs')
+
+A generator might support more than one toolchain, please refer to its
+documentation for the complete list of supported targets and architectures.
+
+If a generator does not support a toolchain it will ignore it.
+
+4) Writing a new generator
+-------------------------------------------------------------------------------
+
+Easy, do as you wish! But PLEASE do not factor code between different
+generators. It's pointless and will significantly increase the complexity of
+understanding them.
+
+Every single IDE names every single programming concept using a different term.
+If it's a new generator for a new IDE then a new script is in order.
+
+5) Extending existing generators
+-------------------------------------------------------------------------------
+
+You can check the vs2010_android.py extension for a short sample on how to
+augment an existing generator.
+
+If you need to extract code to functions in the generator in order to decorate
+them, go ahead. But please keep the code structure as barebone and linear as
+possible.
+
+That's it!
+Have a good day
