@@ -18,15 +18,19 @@ Write a build.py script (see the included build.py for a moderately complex exam
 Features
 --------
 
-* Output Visual Studio 2010 C++ solutions and projects,
-* Qt project support for Visual Studio (Qt-addin isn't required),
-* Output Android JNI makefile,
-* Project dependencies and automatic link order,
-* Dot map generator to output a graph of project dependencies,
-* Easy to extend existing generators,
+* Visual Studio 2010 C++ solutions and project generator,
+* Qt extension for the vs2010 generator (Qt-addin isn't required),
+* VSAndroid (Android for Visual Studio) extension for the vs2010 generator,
+* Native Android JNI makefile generator,
+* Project dependencies to inherit build properties and automatic makefile link order,
+* Graphviz generator to output a graph of project dependencies,
+* Output several solutions/project/targets from the same build file,
 * Paper-thin API meant to stay this way,
-* Each generator is independent.
+* Easy to extend existing generators,
+* Each generator is independent,
+* Free beer.
 
-Have a look in the doc/ folder for more informations on what's supported. Contributions are welcome. I am a Python newbie so if you spot something that can be written in a more pythonic way, feel free to do so.
+Have a look in the doc/ folder for more informations on what's supported. Contributions are welcome.
+I am a Python newbie so if you spot something that can be written in a more pythonic way, feel free to do so.
 
 Cheers!
