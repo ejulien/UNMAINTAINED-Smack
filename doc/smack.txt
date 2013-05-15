@@ -16,7 +16,10 @@ remaining 25% that fails.
 A context is a configurable filter holding configuration keys. The smack object
 maintains a context object in which configuration keys and values are stored.
 
+The following filters are available to categorize configuration keys:
+
 * workspace     Top-level entity (workspace, namespace, solution, etc...)
+* group         Holds together several projects
 * project       Usually a group of files that are built and linked to
                 produce a binary
 * build         Groups configuration keys for under a common build (usually
