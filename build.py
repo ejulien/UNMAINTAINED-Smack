@@ -2,14 +2,12 @@
 # MIT Licensed
 
 # Example of a build file (this is the actual build file for gamestart)
-
 import api, smack
 
 # -----------------------------------------------------------------------------
 cpp_filter = ['*.c', '*.cpp', '*.cc', '*.h']
 
-def rootPath(path = ''): return '../' + path
-def corePath(path = ''): return rootPath('core/') + path
+def rootPath(path = ''): return '../../' + path
 def modPath(path = ''): return rootPath('modules/') + path
 def extPath(path = ''): return rootPath('extern/') + path
 def sdkPath(path = ''): return rootPath('sdk/') + path
@@ -31,7 +29,7 @@ make.set('type', 'staticlib')
 #------------------------------------------------------------------------------
 make.push()
 
-make.setGroup('os')
+make.setGroup('core')
 
 make.setProject('platform')
 make.set('include_path', rootPath('platform'))
@@ -42,18 +40,11 @@ make.set('depends', 'platform')
 make.set('include_path', rootPath('framework'))
 make.set('files', api.inputs().add(rootPath('framework'), cpp_filter))
 
-make.setGroup('engine')
-
 make.setProject('engine')
 make.set('depends', 'framework')
-make.set('include_path', rootPath('core'))
-make.set('files', api.inputs().add(corePath('engine'), cpp_filter))
+make.set('include_path', rootPath('engine'))
+make.set('files', api.inputs().add(rootPath('engine'), cpp_filter))
 make.setModContext('link', 'd3d9', {'target': 'windows', 'build': 'Debug'})
-
-make.setProject('script')
-make.set('depends', 'framework')
-make.set('include_path', rootPath('core'))
-make.set('files', api.inputs().add(corePath('script'), cpp_filter))
 
 #------------------------------------------------------------------------------
 # Modules
@@ -148,7 +139,7 @@ make.set('include_path', modPath())
 make.set('files', api.inputs().add(modPath('raytracer'), cpp_filter))
 
 make.setProject('script_squirrel')
-make.set('depends', ['script', 'squirrel', 'enet'])
+make.set('depends', ['engine', 'squirrel', 'enet'])
 make.set('include_path', modPath())
 make.set('files', api.inputs().add(modPath('script_squirrel'), cpp_filter))
 
@@ -334,7 +325,7 @@ make.setGroup('editor')
 #------------------------------------------------------------------------------
 # Editor
 #------------------------------------------------------------------------------
-import vs2010_qt
+import vs2010, vs2010_qt
 vs2010_qt.install()
 
 make.setProject('editor')
@@ -344,7 +335,7 @@ make.set('depends', ['egl', 'import_fbx', 'import_obj', 'tools', 'openal', 'http
 make.set('include_path', rootPath('editor'))
 make.set('use_pch', 'editor_pch.h')
 make.set('create_pch', rootPath('editor/editor_pch.cpp'))
-make.set('files', api.inputs().add(rootPath('editor'), cpp_filter + vs2010_qt.qt_filter))
+make.set('files', api.inputs().add(rootPath('editor'), cpp_filter + vs2010.resource_filter + vs2010_qt.qt_filter))
 make.set('qt', '4.8.4')
 make.set('qt_res', api.inputs().add(rootPath('editor/resource/icons'), '*.*'))		# will rebuild qrc if any of these inputs has been modified
 make.set('qt_modules', ['core', 'gui', 'opengl', 'script', 'webkit', 'network'])
@@ -429,17 +420,17 @@ toolchains = [
 ]
 
 # -----------------------------------------------------------------------------
-import vs2010, vs2010_android
+import vs2010_android
 vs2010_android.install()
-vs2010.generate(make, toolchains, 'vs')
+vs2010.generate(make, toolchains, '../vs2010')
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 import android_mk
-android_mk.generate(make, toolchains, '../android/eclipse/viewer/jni')
+android_mk.generate(make, toolchains, '../../android/eclipse/viewer/jni')
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-import dot_map
-dot_map.generate(make, 'graph')
+#import dot_map
+#dot_map.generate(make, 'graph')
 # -----------------------------------------------------------------------------

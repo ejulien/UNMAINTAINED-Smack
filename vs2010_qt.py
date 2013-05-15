@@ -57,54 +57,57 @@ def getAdditionalLibraryDirectories(base, make, cfg, output_path):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
+qt_specific_files = None
+
+def getFileCategory(base, project, file, output_path):
+	global qt_specific_files
+	ext = os.path.splitext(file['name'])[1].lower()
+
+	cat = None
+	if ext in ['.h', '.hpp']:
+		# test header for the Q_OBJECT macro presence
+		cat = 'include_files'
+		with open(output_path + '\\' + file['name'], 'r') as f:
+			for line in f.readlines():
+				if qobject_re.search(line):
+					cat = 'custom_files'
+					break
+
+		# MOC'ed headers produces additional compilation units
+		if cat == 'custom_files':
+			for cfg in project['configurations']:
+				ctx = cfg['ctx']
+				if ctx['target'] == 'windows' and ctx['arch'] == 'x86':		# TODO support x64 as well...
+					moc_name = 'moc_' + os.path.splitext(os.path.basename(file['name']))[0] + '.cpp'
+					moc_path = 'GeneratedFiles\\' + ctx['build'] + '\\' + moc_name
+					moc_file = {'name': moc_path, 'custom_build': False, 'filter': 'GeneratedFiles\\' + ctx['build']}
+
+					# skip building this file for all configurations but this one
+					moc_file['skip_cfg'] = [c for c in project['configurations'] if c != cfg]
+					qt_specific_files.append(moc_file)
+
+	elif ext == '.qrc':
+		cat = 'custom_files'
+
+		# qrc files produces additional compilation units
+		qrc_name = 'qrc_' + os.path.splitext(os.path.basename(file['name']))[0] + '.cpp'
+		qrc_path = 'GeneratedFiles\\' + qrc_name
+		qrc_file = {'name': qrc_path, 'custom_build': False, 'filter': 'GeneratedFiles', 'use_pch': False}	# [EJ] disable PCH for qrc produced compilation unit
+		qt_specific_files.append(qrc_file)
+
+	elif ext == '.ui':
+		file_type = 'custom_files'
+
+	return cat if cat else base(project, file, output_path)
+
 def distributeProjectFiles(base, make, project, output_path):
-	project['source_files'] = []
-	project['include_files'] = []
-	project['custom_files'] = []
-	add_files = []
+	global qt_specific_files
+	qt_specific_files = []
 
-	for file in project['files']:
-		file_type = 'source_files'
-		ext = api.getFileExt(file['name'])
+	base(make, project, output_path)
 
-		if ext == '.h':
-			# test header for the Q_OBJECT macro presence
-			file_type = 'include_files'
-			with open(output_path + '\\' + file['name'], 'r') as f:
-				for line in f.readlines():
-					if qobject_re.search(line):
-						file_type = 'custom_files'
-						break
-
-			# MOC'ed headers produces additional compilation units
-			if file_type == 'custom_files':
-				for cfg in project['configurations']:
-					ctx = cfg['ctx']
-					if ctx['target'] == 'windows' and ctx['arch'] == 'x86':		# TODO support x64 as well...
-						moc_name = 'moc_' + os.path.splitext(os.path.basename(file['name']))[0] + '.cpp'
-						moc_path = 'GeneratedFiles\\' + ctx['build'] + '\\' + moc_name
-						moc_file = {'name': moc_path, 'custom_build': False, 'filter': 'GeneratedFiles\\' + ctx['build']}
-
-						# skip building this file for all configurations but this one
-						moc_file['skip_cfg'] = [c for c in project['configurations'] if c != cfg]
-						add_files.append(moc_file)
-
-		elif ext == '.qrc':
-			file_type = 'custom_files'
-
-			# qrc files produces additional compilation units
-			qrc_name = 'qrc_' + os.path.splitext(os.path.basename(file['name']))[0] + '.cpp'
-			qrc_path = 'GeneratedFiles\\' + qrc_name
-			qrc_file = {'name': qrc_path, 'custom_build': False, 'filter': 'GeneratedFiles', 'use_pch': False}	# [EJ] disable PCH for qrc produced compilation unit
-			add_files.append(qrc_file)
-
-		elif ext == '.ui':
-			file_type = 'custom_files'
-
-		project[file_type].append(file)
-
-	project['files'].extend(add_files)
-	project['source_files'].extend(add_files)	# MOC are standard c++
+	project['files'].extend(qt_specific_files)
+	project['source_files'].extend(qt_specific_files)	# MOC are standard c++
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -185,6 +188,8 @@ def outputProjectExtensionTag(base, f, make, project):
 
 def install():
 	vs2010.getProjectKeyword = api.hook(vs2010.getProjectKeyword, getProjectKeyword)
+
+	vs2010.getFileCategory = api.hook(vs2010.getFileCategory, getFileCategory)
 	vs2010.distributeProjectFiles = api.hook(vs2010.distributeProjectFiles, distributeProjectFiles)
 
 	vs2010.getAdditionalIncludes = api.hook(vs2010.getAdditionalIncludes, getAdditionalIncludes)

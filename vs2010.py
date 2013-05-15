@@ -3,6 +3,8 @@
 
 import smack, copy, uuid, api, os
 
+resource_filter = ['*.rc']
+
 files_common_prefix = ''
 
 #------------------------------------------------------------------------------
@@ -125,12 +127,6 @@ def getBinaryPath(make, ctx):
 		path = '.'
 	return os.path.normpath(path + '/?')[:-1]	# trailing slash is required
 
-def isIncludeFile(path):
-	ext = os.path.splitext(path)[1].lower()
-	if ext in ['.h', '.hpp']:
-		return True
-	return False
-
 def skipProjectBuild(cfg):
 	pflags = cfg['pflags']
 	if pflags == None: return False
@@ -181,15 +177,23 @@ def outputPrecompiledHeaderTags(f, make, cfg):
 def outputProjectExtensionTag(f, make, project):
 	return
 
-def distributeProjectFiles(project, output_path):
+def getFileCategory(project, file, output_path):
+	ext = os.path.splitext(file['name'])[1].lower()
+	if ext in ['.cpp', '.c', '.cc']:
+		return 'source_files'
+	elif ext in ['.h', '.hpp']:
+		return 'include_files'
+	elif ext in ['.rc']:
+		return 'resource_files'
+	return 'custom_files'
+	
+def distributeProjectFiles(make, project, output_path):
 	project['source_files'] = []
 	project['include_files'] = []
+	project['resource_files'] = []
 	project['custom_files'] = []
 	for file in project['files']:
-		if isIncludeFile(file) == True:
-			project['include_files'].append(file)
-		else:
-			project['source_files'].append(file)
+		project[getFileCategory(project, file, output_path)].append(file)
 
 def assignProjectFilesFilter(project, output_path):
 	for file in project['files']:
@@ -379,6 +383,12 @@ def outputProject(make, project, projects, output_path):
 		outputPCHDirective(f, project, file)
 		outputExcludeFileFromBuildDirective(f, file)
 		closeCompileFileClDirective(f, project, file, output_path)
+	f.write('  </ItemGroup>\n')
+
+	# output resource compilation
+	f.write('  <ItemGroup>\n')
+	for file in project['resource_files']:
+		f.write('    <ResourceCompile Include=\"' + file['name'] + '\" />\n')
 	f.write('  </ItemGroup>\n')
 
 	# output custom units
@@ -611,6 +621,7 @@ def outputSolutionFilters(make, ctx, projects, output_path):
 
 		outputItemGroup(f, project['include_files'], 'ClInclude')
 		outputItemGroup(f, project['source_files'], 'ClCompile')
+		outputItemGroup(f, project['resource_files'], 'ResourceCompile')
 		outputItemGroup(f, project['custom_files'], 'CustomBuild')
 		f.write('</Project>\n')
 #------------------------------------------------------------------------------
