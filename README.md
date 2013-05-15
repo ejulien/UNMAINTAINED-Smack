@@ -7,8 +7,7 @@ Opening Statement
 -----------------
 
 smack is a tool by programmers for programmers, meant to remain simple.
-The goal is to have it work 75% of the time and remain easy to fix for the
-remaining 25% that fails.
+The goal is to have it work 75% of the time and easy to fix for the 25% that fail.
 
 Installation
 ------------
