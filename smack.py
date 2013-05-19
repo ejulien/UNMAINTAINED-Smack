@@ -48,7 +48,9 @@ class context:
 		score = 0
 		for key in self.ctx:
 			if (key in ctx) and (key in key_weights):
-				if (self.ctx[key] != None) and (self.ctx[key] == ctx[key]):
+				if self.ctx[key] and ctx[key] and (self.ctx[key] != ctx[key]):
+						return -1	# EJ both contexts specify a value that does not match, exclude this result.
+				if self.ctx[key] and (self.ctx[key] == ctx[key]):
 					score += key_weights.index(key) + 1
 
 		return score
@@ -235,7 +237,7 @@ class make:
 			if prj in out:
 				return out.index(prj)
 
-			deps = self.get('depends', ctx.clone({'project': prj}))
+			deps = self.get('depends', ctx.clone({'project': prj, 'group': '*'}))	# EJ look in all groups
 
 			i = None
 			if deps != None:
@@ -264,7 +266,7 @@ class make:
 
 		# append explicit links for each dependency
 		for dep in deps:
-			links = self.get('link', get_context.clone({'project': dep}))
+			links = self.get('link', get_context.clone({'project': dep, 'group': '*'}))	# EJ look in all groups
 			if links != None:
 				out = api.appendToList(out, [l for l in links if l not in out])
 
@@ -283,7 +285,7 @@ class make:
 		# gether across dependencies
 		val = None
 		for dep in deps:
-			val = api.appendToList(val, self.get(key, get_context.clone({'project': dep})))
+			val = api.appendToList(val, self.get(key, get_context.clone({'project': dep, 'group': '*'})))	# EJ look in all groups
 
 		# append context specific
 		return api.appendToList(val, self.get(key, get_context))

@@ -609,7 +609,7 @@ def outputSolutionFilters(make, ctx, projects, output_path):
 				f.write('    </Filter>\n')
 		f.write('  </ItemGroup>\n')
 
-		# filtered elements
+		# include/source/resource/custom elements
 		def outputItemGroup(f, list, tag):
 			f.write('  <ItemGroup>\n')
 			for item in list:
@@ -635,14 +635,14 @@ def generateSolution(make, ctx, toolchains, output_path):
 	    os.makedirs(output_path)
 
 	# convert projects
-	projects = make.getConfigurationKeyValuesFilterByContext('project', ctx)
+	groups = make.getConfigurationKeyValuesFilterByContext('group', ctx)
 
 	vs_projects = []
-	for project in projects:
-		ctx.push()
-		ctx['project'] = project
-		vs_projects.append(generateProject(make, ctx, toolchains, output_path))
-		ctx.pop()
+	for group in groups:
+		group_ctx = ctx.clone({'group': group})
+		projects = make.getConfigurationKeyValuesFilterByContext('project', group_ctx)
+		for project in projects:
+			vs_projects.append(generateProject(make, group_ctx.clone({'project': project}), toolchains, output_path))
 
 	# write projects
 	for project in vs_projects:
@@ -662,6 +662,6 @@ def generate(make, toolchains, output_path):
 
 	# process all workspaces
 	for workspace in workspaces:
-		ctx = smack.context().clone({'workspace': workspace, 'group': '*'})
+		ctx = smack.context().clone({'workspace': workspace})
 		generateSolution(make, ctx, toolchains, output_path)
 #------------------------------------------------------------------------------

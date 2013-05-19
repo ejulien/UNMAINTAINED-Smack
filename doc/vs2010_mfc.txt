@@ -1,0 +1,38 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+
+MFC extension for the vs2010 generator by Emmanuel Julien 2013
+-------------------------------------------------------------------------------
+
+1) Usage
+-------------------------------------------------------------------------------
+
+Import the vs2010_mfc module from your build script, install it and call the
+vs2010 generator with a build configured to use the MFC. eg:
+
+import vs2010_mfc
+
+# install the extension over the vs2010 generator
+vs2010_mfc.install()
+
+make = smack()
+
+make.setProject('prj')
+make.setFiles('main.cpp')
+make.set('use-mfc', True)
+make.set('mfc-type', 'dynamic')
+
+vs2010.generate(make, toolchain, 'build/vs')
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+This generator adds the following specific configuration keys:
+
+* use-mfc       -   Specify that this project uses the MFC.
+
+* mfc-type      -   Select wether the to statically or dynamically link the
+                    MFC librairies (default: dynamic).
+
+    'dynamic', 'static'

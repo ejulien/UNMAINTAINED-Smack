@@ -45,11 +45,6 @@ def convertCFlags(cflags):
 
 #------------------------------------------------------------------------------
 def outputProject(f, make, project, projects, output_path):
-	# filter out unsupported types
-	if project['type'] == 'executable':
-		api.warning('NDK-BUILD cannot build executables', 1)
-		return
-
 	# skip project
 	if project['pflags'] != None and 'skip_build' in project['pflags']:
 		return
@@ -131,7 +126,7 @@ def outputProject(f, make, project, projects, output_path):
 		if l_static != '' or l_shared != '' or l_ldlibs != '': f.write('\n')	# some formatting doesn't hurt
 
 	# output project type
-	f.write('include $(' + api.translate(project['type'], {'staticlib': 'BUILD_STATIC_LIBRARY', 'dynamiclib': 'BUILD_SHARED_LIBRARY'}, None) + ')\n')
+	f.write('include $(' + api.translate(project['type'], {'staticlib': 'BUILD_STATIC_LIBRARY', 'dynamiclib': 'BUILD_SHARED_LIBRARY', 'executable': 'BUILD_EXECUTABLE'}, None) + ')\n')
 	f.write('\n')
 #------------------------------------------------------------------------------
 
@@ -247,12 +242,15 @@ def generateMakefile(make, ctx, toolchains, output_path):
 	    os.makedirs(output_path)
 
 	# convert projects
-	projects = make.getConfigurationKeyValuesFilterByContext('project', ctx)
+	groups = make.getConfigurationKeyValuesFilterByContext('group', ctx)
 
 	mk_projects = []
-	for project in projects:
-		# filter out any build specific configuration keys, they will be added to Application.mk
-		mk_projects.append(generateProject(make, ctx.clone({'project': project, 'build': '@Exclude'}), output_path))
+	for group in groups:
+		group_ctx = ctx.clone({'group': group})
+		projects = make.getConfigurationKeyValuesFilterByContext('project', group_ctx)
+		for project in projects:
+			# filter out any build specific configuration keys, they will be added to Application.mk
+			mk_projects.append(generateProject(make, group_ctx.clone({'project': project, 'build': '@Exclude'}), output_path))
 
 	# write Android makefile
 	api.log("Output makefile 'Android.mk'", 1)
@@ -274,6 +272,6 @@ def generate(make, toolchains, output_path):
 
 	# process all workspaces
 	for workspace in workspaces:
-		ctx = smack.context().clone({'workspace': workspace, 'target': 'android', 'group': '*'})
+		ctx = smack.context().clone({'workspace': workspace, 'target': 'android'})
 		generateMakefile(make, ctx, toolchains, output_path)
 #------------------------------------------------------------------------------

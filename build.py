@@ -1,13 +1,19 @@
 # smack - Emmanuel Julien 2013 (ejulien@owloh.com)
 # MIT Licensed
 
-# Example of a build file (this is the actual build file for gamestart)
 import api, smack
+
+import vs2010, vs2010_mfc, vs2010_android
+vs2010_mfc.install()
+vs2010_android.install()
+
+import android_mk
 
 # -----------------------------------------------------------------------------
 cpp_filter = ['*.c', '*.cpp', '*.cc', '*.h']
 
 def rootPath(path = ''): return '../../' + path
+def corePath(path = ''): return rootPath('core/') + path
 def modPath(path = ''): return rootPath('modules/') + path
 def extPath(path = ''): return rootPath('extern/') + path
 def sdkPath(path = ''): return rootPath('sdk/') + path
@@ -27,8 +33,6 @@ make.set('type', 'staticlib')
 #------------------------------------------------------------------------------
 # Projects
 #------------------------------------------------------------------------------
-make.push()
-
 make.setGroup('core')
 
 make.setProject('platform')
@@ -235,7 +239,7 @@ make.set('include_path', rootPath('openal'))
 
 make.push()
 
-# windows
+# target specific
 make.setTarget('windows')
 make.set('include_path', sdkPath('OpenAL 1.1 SDK/include'))
 make.set('lib_path', sdkPath('OpenAL 1.1 SDK/libs/Win32'))
@@ -249,13 +253,12 @@ make.set('files', api.inputs().add(rootPath('openal'), cpp_filter).getList())
 #------------------------------------------------------------------------------
 
 make.setGroup('windows')
+make.setProject()
 make.setModContext('pflags', 'skip_build', {'target': '!windows'})
 
 #------------------------------------------------------------------------------
 # Windows platform
 #------------------------------------------------------------------------------
-make.push()
-
 make.setProject('win_platform')
 make.set('depends', 'platform')
 make.set('include_path', rootPath('win/source'))
@@ -267,11 +270,19 @@ make.set('link', ['xinput', 'dxguid', 'dinput8'])
 make.setProject('viewer')
 make.set('type', 'executable')
 make.set('depends', ['egl', 'openal', 'http_curl', 'io_archive', 'io_net', 'io_zip', 'audio_stream_ogg', 'pict_io_jpeglib', 'pict_io_stb', 'viewer_base', 'win_platform'])
-make.set('subsystem', 'console')
+make.setModContext('subsystem', 'console', {'build': 'Debug'})	# console app on Debug builds
 make.set('include_path', rootPath('win/viewer'))
 make.set('files', api.inputs().add(rootPath('win/viewer'), cpp_filter))
 
-make.pop()
+# Launcher
+make.setProject('launcher')
+make.set('depends', ['framework', 'win_platform'])
+make.set('type', 'executable')
+make.set('use_pch', 'stdafx.h')
+make.set('create_pch', rootPath('win/launcher/stdafx.cpp'))
+make.set('include_path', rootPath('win/launcher'))
+make.set('files', api.inputs().add(rootPath('win/launcher'), cpp_filter + vs2010.resource_filter))
+make.set('use-mfc', True)
 #------------------------------------------------------------------------------
 
 make.setGroup('unix')
@@ -325,7 +336,7 @@ make.setGroup('editor')
 #------------------------------------------------------------------------------
 # Editor
 #------------------------------------------------------------------------------
-import vs2010, vs2010_qt
+import vs2010_qt
 vs2010_qt.install()
 
 make.setProject('editor')
@@ -335,10 +346,11 @@ make.set('depends', ['egl', 'import_fbx', 'import_obj', 'tools', 'openal', 'http
 make.set('include_path', rootPath('editor'))
 make.set('use_pch', 'editor_pch.h')
 make.set('create_pch', rootPath('editor/editor_pch.cpp'))
-make.set('files', api.inputs().add(rootPath('editor'), cpp_filter + vs2010.resource_filter + vs2010_qt.qt_filter))
+make.set('files', api.inputs().add(rootPath('editor'), cpp_filter + vs2010_qt.qt_filter))
 make.set('qt', '4.8.4')
 make.set('qt_res', api.inputs().add(rootPath('editor/resource/icons'), '*.*'))		# will rebuild qrc if any of these inputs has been modified
 make.set('qt_modules', ['core', 'gui', 'opengl', 'script', 'webkit', 'network'])
+make.setModContext('pflags', 'skip_build', {'target': '!windows'})					# skip on all but windows target for the moment
 #------------------------------------------------------------------------------
 
 make.setGroup('unit_test')
@@ -349,19 +361,18 @@ make.setGroup('unit_test')
 make.setProject('unit_test')
 make.set('type', 'executable')
 make.set('subsystem', 'console')
-make.set('depends', ['gtest', 'network_enet', 'io_net', 'io_zip', 'http_curl'])
+make.set('depends', ['gtest', 'network_enet', 'io_net', 'io_zip', 'http_curl', 'pict_io_stb'])
 make.setModContext('depends', 'win_platform', {'target': 'windows'})
 make.set('include_path', rootPath('unit-test'))
 make.set('files', api.inputs().add(rootPath('unit-test'), cpp_filter))
+make.setModContext('pflags', 'skip_build', {'target': 'android'})	# TODO make that run on Android as well
 
-#
-make.pop()
+make.setProject()
+make.setGroup()
 
 #------------------------------------------------------------------------------
 # Builds
 #------------------------------------------------------------------------------
-make.push()
-
 make.setBuild('Debug')
 make.set('cflags', ['debug', 'O0'])
 make.set('define', '_DEBUG')
@@ -374,14 +385,12 @@ make.setBuild('Master')
 make.set('cflags', ['O3', 'optimize'])
 make.set('define', ['NDEBUG', '__ENGINE_RETAIL__=1'])
 
-make.pop()
+make.setBuild()
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # Targets
 #------------------------------------------------------------------------------
-make.push()
-
 make.setTarget('android')
 make.set('define', ['__PLATFORM_ANDROID_NDK__=1', '__PLATFORM_UNIX__=1'])
 make.set('cflags', ['use-stlport', 'W2'])
@@ -393,7 +402,11 @@ make.set('define', '__PLATFORM_WINDOWS__=1')
 make.set('cflags', 'W3')
 make.set('bin_path', '../bin/win')
 
-make.pop()
+make.setTarget('linux')
+make.set('define', ['__PLATFORM_LINUX__=1', '__PLATFORM_UNIX__=1'])
+make.set('bin_path', '../bin/linux')
+
+make.setTarget()
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -417,17 +430,23 @@ toolchains = [
 		'target': 'windows',
 		'arch': ['x86', 'x64'],
 	},
+	{
+		'target': 'linux',
+		'arch': ['x86', 'x64'],
+	}
 ]
 
 # -----------------------------------------------------------------------------
-import vs2010_android
-vs2010_android.install()
 vs2010.generate(make, toolchains, '../vs2010')
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-import android_mk
 android_mk.generate(make, toolchains, '../../android/eclipse/viewer/jni')
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+#import scons
+#?scons.generate(make, [{'target': 'linux', 'arch': ['x86']}], '../scons')
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
