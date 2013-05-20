@@ -74,6 +74,8 @@ def outputProject(f, make, project, projects, output_path):
 	if local_cflags != None:
 		if 'short-commands' in local_cflags:
 			f.write('LOCAL_SHORT_COMMANDS := true\n')
+		if 'use-neon' in local_cflags:
+			f.write('LOCAL_ARM_NEON := true\n')
 
 	if cflags != '':
 		f.write('LOCAL_CFLAGS := ' + cflags + '\n')
@@ -188,7 +190,14 @@ def outputApplicationMk(make, ctx, toolchains, mk_projects, output_path):
 
 	f.write('\n')
 
+	# global settings.
+	app_platform = make.get('android_app_platform', ctx)
+	if app_platform:
+		f.write('APP_PLATFORM := android-' + str(app_platform[0]) + '\n')
+
 	# output build rules
+	f.write('\n')
+
 	for build in builds:
 		for toolchain in toolchains:
 			if toolchain['target'] != 'android':
@@ -215,6 +224,9 @@ def outputApplicationMk(make, ctx, toolchains, mk_projects, output_path):
 
 				cflags = make.get('cflags', app_ctx)
 				if cflags != None:
+					if 'use-neon' in cflags:
+						f.write('LOCAL_ARM_NEON := true\n')
+
 					gflags = convertCFlags(cflags)
 					for v in gflags:
 						app_cflags += v + ' '

@@ -346,7 +346,7 @@ make.set('depends', ['egl', 'import_fbx', 'import_obj', 'tools', 'openal', 'http
 make.set('include_path', rootPath('editor'))
 make.set('use_pch', 'editor_pch.h')
 make.set('create_pch', rootPath('editor/editor_pch.cpp'))
-make.set('files', api.inputs().add(rootPath('editor'), cpp_filter + vs2010_qt.qt_filter))
+make.set('files', api.inputs().add(rootPath('editor'), cpp_filter + vs2010.resource_filter + vs2010_qt.qt_filter))
 make.set('qt', '4.8.4')
 make.set('qt_res', api.inputs().add(rootPath('editor/resource/icons'), '*.*'))		# will rebuild qrc if any of these inputs has been modified
 make.set('qt_modules', ['core', 'gui', 'opengl', 'script', 'webkit', 'network'])
@@ -377,12 +377,17 @@ make.setBuild('Debug')
 make.set('cflags', ['debug', 'O0'])
 make.set('define', '_DEBUG')
 
+def setFullOptimization(make):
+	make.set('cflags', ['O3', 'optimize'])
+	make.setModContext('cflags', 'use-sse2', {'arch': ['x86', 'x64']})		# SSE2 on Intel 32 and 64 bit
+	make.setModContext('cflags', 'use-neon', {'arch': ['ARMv7']})			# NEON on ARM7
+
 make.setBuild('Release')
-make.set('cflags', ['O3', 'optimize', 'use-sse2'])
+setFullOptimization(make)
 make.set('define', 'NDEBUG')
 
 make.setBuild('Master')
-make.set('cflags', ['O3', 'optimize'])
+setFullOptimization(make)
 make.set('define', ['NDEBUG', '__ENGINE_RETAIL__=1'])
 
 make.setBuild()
@@ -394,6 +399,7 @@ make.setBuild()
 make.setTarget('android')
 make.set('define', ['__PLATFORM_ANDROID_NDK__=1', '__PLATFORM_UNIX__=1'])
 make.set('cflags', ['use-stlport', 'W2'])
+make.set('android_app_platform', 8)
 #make.set('android_toolset', '4.6')
 make.set('bin_path', '../bin/android')
 
@@ -437,7 +443,7 @@ toolchains = [
 ]
 
 # -----------------------------------------------------------------------------
-vs2010.generate(make, toolchains, '../vs2010')
+#vs2010.generate(make, toolchains, '../vs2010')
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------

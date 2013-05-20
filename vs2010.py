@@ -35,6 +35,14 @@ def getBinaryName(base, type, target, suffix):
 		return base + suffix
 	return 'lib' + base + suffix
 
+def getPDBName(base, suffix):
+	if suffix == None:
+		suffix = ''
+	else:
+		suffix = suffix[0]
+
+	return base + suffix
+
 def getBinaryExt(type, target):
 	if target == 'windows':
 		return {
@@ -298,6 +306,8 @@ def outputProject(make, project, projects, output_path):
 	# compiler / linker properties
 	for cfg in project['configurations']:
 		ctx = cfg['ctx']
+		suffix = make.get('bin_suffix', ctx)
+
 		f.write('  <ItemDefinitionGroup ' + getCondition(cfg) + '>\n')
 
 		# compiler
@@ -309,7 +319,7 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <PreprocessorDefinitions>' + getDefines(make, cfg) + '</PreprocessorDefinitions>\n')
 		f.write('      <AdditionalIncludeDirectories>' + getAdditionalIncludes(make, cfg, output_path) + '</AdditionalIncludeDirectories>\n')
 		f.write('      <DebugInformationFormat>' + getDebugInformation(cflags) + '</DebugInformationFormat>\n')
-		f.write('      <ProgramDataBaseFileName>$(OutDir)' + project['name'] + '.pdb</ProgramDataBaseFileName>\n')
+		f.write('      <ProgramDataBaseFileName>$(OutDir)' + getPDBName(project['name'], suffix) + '.pdb</ProgramDataBaseFileName>\n')
 		f.write('      <Optimization>' + getOptimization(cflags) + '</Optimization>\n')
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')

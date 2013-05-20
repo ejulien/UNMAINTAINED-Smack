@@ -1,7 +1,7 @@
 # smack - Emmanuel Julien 2013 (ejulien@owloh.com)
 # MIT Licensed
 
-import api, copy
+import api, copy, itertools
 
 #
 class context:
@@ -59,18 +59,38 @@ class context:
 	def mod(self, mods):
 		if mods != None:
 			for k in mods.keys():
+				if type(mods[k]) == list:
+					raise Exception('Cannot mod a context with several values for a given filter, please use clone() for this') 
 				self.ctx[k] = mods[k]
 		return self
 
 	# clone this context, optionally modify it
 	def clone(self, mods = None):
-		return copy.deepcopy(self).mod(mods)
+
+		# convert all mods value to lists
+		for k in mods.keys():
+			if type(mods[k]) != list:
+				mods[k] = [mods[k]]
+
+		# create all clone combinations
+		clones = [copy.deepcopy(self)]
+
+		for k in mods.keys():
+			stage_clones = []
+			for c in clones:
+				for v in mods[k]:
+					cln = copy.deepcopy(c)
+					cln.ctx[k] = v
+					stage_clones.append(cln)
+			clones = stage_clones
+
+		return clones[0] if len(clones) == 1 else clones
 
 	def formatFilter(self, key):
 		return '-' if self.ctx[key] == None else self.ctx[key]
 
 	def __repr__(self):
-		return '[' + self.formatFilter('workspace') + '/' + self.formatFilter('group') + '/' + self.formatFilter('project') + '/' + self.formatFilter('build') + '/' + self.formatFilter('target') + '/' + self.formatFilter('arch') + ']'
+		return '(' + self.formatFilter('workspace') + '/' + self.formatFilter('group') + '/' + self.formatFilter('project') + '/' + self.formatFilter('build') + '/' + self.formatFilter('target') + '/' + self.formatFilter('arch') + ')'
 
 	def set(self, workspace, group, project, build, target, arch):
 		self.ctx['workspace'] = workspace
@@ -104,6 +124,8 @@ class make:
 	def pop(self):
 		self.ctx.pop()
 
+	def setContext(self, ext):
+		self.ctx.set(ext['workspace'], ext['group'], ext['project'], ext['build'], ext['target'], ext['arch'])
 	def getContext(self):
 		return self.ctx
 
@@ -135,22 +157,21 @@ class make:
 					rval.append(ctx[key])
 		return rval
 
-	def setModContext(self, key, v, in_ctx):
+	def setModContext(self, key, v, mods):
+		clones = self.ctx.clone(mods)
+
 		self.push()
-		# apply input context changes
-		for ck in in_ctx.keys():
-			self.ctx[ck] = in_ctx[ck]
-		self.set(key, v)
+		if type(clones) == list:
+			for cln in clones:
+				self.setContext(cln)
+				self.set(key, v)
+		else:
+			self.setContext(clones)
+			self.set(key, v)
 		self.pop()
 
-	def getModContext(self, key, in_ctx):
-		self.push()
-		# apply input context changes
-		for ck in in_ctx.keys():
-			self.ctx[ck] = in_ctx[ck]
-		r = self.get(key, self.ctx)
-		self.pop()
-		return r
+	def getModContext(self, key, mods):
+		return self.get(key, self.ctx.clone(mods))
 
 	# set a key in the current context
 	def set(self, key, v):
