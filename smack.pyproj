@@ -5,10 +5,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>b1abed0f-da9f-43f1-af5f-205e4781eff3</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>build.py</StartupFile>
+    <StartupFile>Flux.py</StartupFile>
     <SearchPath>
     </SearchPath>
-    <WorkingDirectory>D:\gs\build</WorkingDirectory>
+    <WorkingDirectory>C:\Smack</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>kismake</Name>
     <RootNamespace>kismake</RootNamespace>
@@ -27,6 +27,7 @@
     <Compile Include="api.py" />
     <Compile Include="build.py" />
     <Compile Include="dot_map.py" />
+    <Compile Include="Flux.py" />
     <Compile Include="smack.py" />
     <Compile Include="vs2010.py" />
     <Compile Include="vs2010_android.py" />

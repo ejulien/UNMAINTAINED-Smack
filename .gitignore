@@ -1,1 +1,4 @@
 *.pyc
+/bin/win/*.lib
+/bin/win/*.pdb
+/*.suo

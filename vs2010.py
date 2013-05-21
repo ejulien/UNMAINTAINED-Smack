@@ -597,7 +597,7 @@ def outputSolutionFilters(make, ctx, projects, output_path):
 
 		# filter list
 		def insertSolutionFilter(filter):
-			nodes = filter.split('\\')
+			nodes = filter.lstrip('\\').split('\\')
 			path = ''
 			if len(nodes) > 0:
 				for node in nodes:
@@ -625,7 +625,7 @@ def outputSolutionFilters(make, ctx, projects, output_path):
 			for item in list:
 				if item['filter']:
 					f.write('    <' + tag + ' Include="' + item['name'] + '">\n')
-					f.write('      <Filter>' + item['filter'] + '</Filter>\n')
+					f.write('      <Filter>' + item['filter'].lstrip('\\') + '</Filter>\n')
 					f.write('    </' + tag + '>\n')
 			f.write('  </ItemGroup>\n')
 

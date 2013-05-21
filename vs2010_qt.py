@@ -172,7 +172,7 @@ def outputCustomFileClDirective(base, f, make, project, file, output_path):
 			if isQtSupportedTarget(cfg['ctx']['target']):
 				f.write('      <AdditionalInputs ' + vs2010.getCondition(cfg) + '>$(QTDIR)\\bin\\uic.exe;%(AdditionalInputs)</AdditionalInputs>\n')
 				f.write('      <Message ' + vs2010.getCondition(cfg) + '>Uic%27ing %(Identity)...</Message>\n')
-				f.write('      <Outputs ' + vs2010.getCondition(cfg) + '>.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>\n')
+				f.write('      <Outputs ' + vs2010.getCondition(cfg) + '>.\\GeneratedFiles\\ui_%(Filename).h;%(Outputs)</Outputs>\n')
 				f.write('      <Command ' + vs2010.getCondition(cfg) + '>"$(QTDIR)\\bin\\uic.exe" -o ".\\GeneratedFiles\\ui_%(Filename).h" "%(FullPath)"</Command>\n')
 #------------------------------------------------------------------------------
 

@@ -3,6 +3,28 @@
 
 import os, copy, fnmatch
 
+__all__ = ["Print"]
+try:
+  Print = eval("print")
+except SyntaxError:
+  try:
+    D = dict()
+    exec("from __future__ import print_function\np=print", D)
+    Print = D["p"]
+    del D
+  except SyntaxError:
+    del D
+    def Print(*args, **kwd):
+      fout = kwd.get("file", sys.stdout)
+      w = fout.write
+      if args:
+        w(str(args[0]))
+        sep = kwd.get("sep", " ")
+        for a in args[1:]:
+          w(sep)
+          w(str(a))
+      w(kwd.get("end", "\n"))
+
 #------------------------------------------------------------------------------
 class hookCallable:
 	def __init__(self, func, over):
@@ -52,10 +74,8 @@ def appendToList(var, value):
 	if value == None:
 		return var
 
-	if type(value).__name__ == 'instance':
-		name = value.__class__.__name__
-		if name == 'inputs':
-			value = value.getList()
+	if (type(value).__name__ == 'inputs') or ((type(value).__name__ == 'instance') and (value.__class__.__name__ == 'inputs')):
+		value = value.getList()
 
 	if	var == None:
 		var = copy.deepcopy(value)
@@ -77,13 +97,13 @@ def log(msg, indent_level = 0):
 	out = ''
 	for i in range(0, indent_level):
 		out += '\t'
-	print out + msg
+	Print( out + msg )
 
 def warning(msg, indent_level = 0):
 	out = ''
 	for i in range(0, indent_level):
 		out += '\t'
-	print out + '[Warning] ' + msg
+	Print( out + '[Warning] ' + msg )
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -95,6 +115,8 @@ def normPathForOs(path, convention = 'unix'):
 	return norm
 
 def getRelativePath(path, ref_path, convention = 'unix'):
+	if path.find('$(') == 0:
+		return path
 	if os.path.isabs(path) == False:
 		path = os.path.abspath(path)
 	if os.path.isabs(ref_path) == False:
@@ -130,6 +152,21 @@ class inputs:
 			if	(recursive == False):
 				break
 		return inputs
+
+	def excludeFile(self, files):
+		if type(files) != list:
+			files = [files]
+
+		files = [os.path.normpath(f) for f in files]
+
+		self.list = [f for f in self.list if f not in files]
+		return self
+
+	def addFile(self, files):
+		if type(files) != list:
+			files = [files]
+		self.list.extend(files)
+		return self
 
 	def add(self, path, pattern, recursive = True):
 		if type(path) != list:
