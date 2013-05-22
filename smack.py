@@ -146,7 +146,7 @@ class make:
 				if not filter_ctx.match(ctx, inherit):
 					continue
 
-				keyv = cleanUpKeyValue(self, ctx[key])
+				keyv = self.cleanUpKeyValue(ctx[key])
 				if keyv and (keyv not in rval):
 					rval.append(keyv)
 		return rval
@@ -161,7 +161,7 @@ class make:
 				if key not in ctx:
 					continue
 
-				keyv = cleanUpKeyValue(self, ctx[key])
+				keyv = self.cleanUpKeyValue(ctx[key])
 				if keyv and (keyv not in rval):
 					rval.append(keyv)
 		return rval
