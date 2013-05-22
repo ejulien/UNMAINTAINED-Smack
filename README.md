@@ -1,7 +1,7 @@
 Smack
 =====
 
-A MIT licensed set of Python 2.7/3 scripts to generate makefile and IDE projects
+A MIT licensed set of Python scripts to generate makefile and IDE projects
 
 Opening Statement
 -----------------
@@ -13,6 +13,7 @@ Installation
 ------------
 
 Write a build.py script (see the included build.py for a moderately complex example), run it.
+Both Python 2 and 3 series are supported.
 
 Features
 --------
@@ -20,6 +21,7 @@ Features
 * Visual Studio 2010 C++ solutions and project generator,
 * Qt extension for the vs2010 generator (Qt-addin isn't required),
 * MFC extension for the vs2010 generator.
+* Intel Compiler extension for the vs2010 generator.
 * VSAndroid (Android for Visual Studio) extension for the vs2010 generator,
 * Native Android JNI makefile generator,
 * Project dependencies to inherit build properties and automatic makefile link order,
