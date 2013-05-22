@@ -1,7 +1,7 @@
 Smack
 =====
 
-A MIT licensed set of Python 2&3 scripts to generate makefile and IDE projects
+A MIT licensed set of Python scripts to generate makefile and IDE projects
 
 Opening Statement
 -----------------
@@ -13,6 +13,7 @@ Installation
 ------------
 
 Write a build.py script (see the included build.py for a moderately complex example), run it.
+Both Python 2 and 3 series are supported.
 
 Features
 --------
