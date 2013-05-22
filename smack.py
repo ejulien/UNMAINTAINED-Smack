@@ -129,6 +129,12 @@ class make:
 	def getContext(self):
 		return self.ctx
 
+	def cleanUpKeyValue(self, v):
+		if not v: return None
+		if v.find('!') == 0:
+			v = v[1:]
+		return v
+
 	# return the list of value of a configuration key for a given context
 	def getConfigurationKeyValuesFilterByContext(self, key, filter_ctx, inherit = True):
 		rval = []
@@ -140,8 +146,9 @@ class make:
 				if not filter_ctx.match(ctx, inherit):
 					continue
 
-				if (ctx[key] != None) and (ctx[key] not in rval):
-					rval.append(ctx[key])
+				keyv = cleanUpKeyValue(self, ctx[key])
+				if keyv and (keyv not in rval):
+					rval.append(keyv)
 		return rval
 
 	# return the list of value of a configuration key
@@ -153,8 +160,10 @@ class make:
 
 				if key not in ctx:
 					continue
-				if (ctx[key] != None) and (ctx[key] not in rval):
-					rval.append(ctx[key])
+
+				keyv = cleanUpKeyValue(self, ctx[key])
+				if keyv and (keyv not in rval):
+					rval.append(keyv)
 		return rval
 
 	def setModContext(self, key, v, mods):

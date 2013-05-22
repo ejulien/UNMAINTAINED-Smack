@@ -1,0 +1,47 @@
+-------------------------------------------------------------------------------
+smack - Emmanuel Julien 2013 (ejulien@owloh.com)
+A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+
+Intel Compiler XE extension for the vs2010 generator by Emmanuel Julien 2013
+-------------------------------------------------------------------------------
+
+1) Usage
+-------------------------------------------------------------------------------
+
+Import the vs2010_icc module from your build script, install it and call the
+vs2010 generator. eg:
+
+import vs2010_icc
+
+toolchain = [
+    {
+        'target': 'windows',
+        'arch': ['x86'],
+    },
+]
+
+# install the extension over the vs2010 generator
+vs2010_icc.install()
+
+make.set('use_icc', '13.0')
+make.set('cflags', 'use-ipp')
+
+# generate the Windows toolchain
+vs2010.generate(make, toolchain, 'build/vs')
+
+2) Configuration keys
+-------------------------------------------------------------------------------
+
+This generator adds the following specific configuration keys:
+
+* use_icc       -   Specify the ICC version for this context (eg. '13.0').
+                    Note: This flag is required to enable ICC support.
+
+* cflags        -   Compiler flags.
+
+    'use-ipp'           Enable the Intel IPP library.
+
+3) Target toolchains
+-------------------------------------------------------------------------------
+
+This extension does not add any target toolchain.

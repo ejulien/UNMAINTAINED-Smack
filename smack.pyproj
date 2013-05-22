@@ -36,6 +36,7 @@
     <Compile Include="smack.py" />
     <Compile Include="vs2010.py" />
     <Compile Include="vs2010_android.py" />
+    <Compile Include="vs2010_icc.py" />
     <Compile Include="vs2010_qt.py" />
   </ItemGroup>
   <ItemGroup>

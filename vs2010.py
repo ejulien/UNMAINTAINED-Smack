@@ -148,11 +148,18 @@ def skipProjectBuild(cfg):
 def getConfigurationType(make, cfg):
 	return api.translate(cfg['type'], {'staticlib': 'StaticLibrary', 'dynamiclib': 'DynamicLibrary', 'executable': 'Application'}, 'StaticLibrary')
 
+def getPlatformToolset(make, ctx):
+	return make.getBestMatch('platform_toolset', ctx)
+
 def outputGeneralProjectProperty(f, make, project, cfg):
 	cflags = cfg['cflags']
 	f.write('    <ConfigurationType>' + getConfigurationType(make, cfg) + '</ConfigurationType>\n')
 	f.write('    <UseDebugLibraries>' + useDebugLibrairies(cflags) + '</UseDebugLibraries>\n')
 	f.write('    <CharacterSet>' + getUnicode(cflags) + '</CharacterSet>\n')
+
+	toolset = getPlatformToolset(make, cfg['ctx'])
+	if toolset:
+		f.write('    <PlatformToolset>' + toolset + '</PlatformToolset>\n')
 
 def getSolutionFileName(file, output_path):
 	return api.getRelativePath(file, output_path, 'windows')
