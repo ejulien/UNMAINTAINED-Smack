@@ -20,6 +20,7 @@ Features
 * Visual Studio 2010 C++ solutions and project generator,
 * Qt extension for the vs2010 generator (Qt-addin isn't required),
 * MFC extension for the vs2010 generator.
+* Intel Compiler extension for the vs2010 generator.
 * VSAndroid (Android for Visual Studio) extension for the vs2010 generator,
 * Native Android JNI makefile generator,
 * Project dependencies to inherit build properties and automatic makefile link order,
