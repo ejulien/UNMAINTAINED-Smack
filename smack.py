@@ -174,10 +174,13 @@ class make:
 		return self.get(key, self.ctx.clone(mods))
 
 	# set a key in the current context
-	def set(self, key, v):
-		if	key not in self.config:
-			self.config[key] = []
-		self.config[key].append({ 'value': v, 'context': copy.deepcopy(self.ctx.ctx) })
+	def set(self, key, v, mods = None):
+		if mods:
+			self.setModContext(key, v, mods)
+		else:
+			if	key not in self.config:
+				self.config[key] = []
+			self.config[key].append({ 'value': v, 'context': copy.deepcopy(self.ctx.ctx) })
 
 	# return a key value for the best match to a given context
 	def getBestMatch(self, key, get_context):
