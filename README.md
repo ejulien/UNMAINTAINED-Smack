@@ -1,7 +1,7 @@
 Smack
 =====
 
-A MIT licensed set of Python 2.7/3 scripts to generate makefile and IDE projects
+A MIT licensed set of Python 2&3 scripts to generate makefile and IDE projects
 
 Opening Statement
 -----------------
