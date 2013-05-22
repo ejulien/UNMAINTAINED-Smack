@@ -60,6 +60,7 @@ The following keys should ideally be supported by all generators.
 * files         -   Files to compile.
 * output_path   -   Output path for the generated makefile/solution/project.
 * bin_path      -   Output path for the generated binaries.
+* obj_path      -   Output path for the intermediate build files.
 * bin_suffix    -   Suffix to be appended to the generated binaries name.
 * include_path  -   Additional include path.
 * lib_path      -   Additional include library.
@@ -94,6 +95,9 @@ The following keys should ideally be supported by all generators.
     'use-exceptions'    Enable exception
 
     'use-sse2'          Enable SSE2
+
+    'struct-member-align-X'
+                        Align structure members on X bytes (X in [1,2,4,8,16])
 
 * define        -   Preprocessor flags to define.
 

@@ -122,14 +122,19 @@ def getUseExceptions(cflags):
 def getUseRTTI(cflags):
 	return 'true' if 'use-rtti' in cflags else 'false'
 
-def getIntermediatePath(cfg):
+def getIntermediatePath(make, cfg):
 	ctx = cfg['ctx']
+	path = make.getBestMatch('obj_path', ctx)
+	if path:
+		return os.path.normpath(path + '/?')[:-1]	# trailing slash is required
+
 	path = 'obj\\' + cfg['vsplatform']
 	if platformImpliesArch(cfg['vsplatform']) == False:
 		path += '\\' + ctx['arch']
 	return path + '\\' + ctx['build'] + '\\' + ctx['project'] + '\\'
 
-def getBinaryPath(make, ctx):
+def getBinaryPath(make, cfg):
+	ctx = cfg['ctx']
 	path = make.getBestMatch('bin_path', ctx)
 	if	path == None:
 		path = '.'
@@ -297,8 +302,8 @@ def outputProject(make, project, projects, output_path):
 	for cfg in project['configurations']:
 		suffix = make.get('bin_suffix', cfg['ctx'])
 		f.write('  <PropertyGroup ' + getCondition(cfg) + '>\n')
-		f.write('    <OutDir>' + getBinaryPath(make, cfg['ctx']) + '</OutDir>\n')
-		f.write('    <IntDir>' + getIntermediatePath(cfg) + '</IntDir>\n')
+		f.write('    <OutDir>' + getBinaryPath(make, cfg) + '</OutDir>\n')
+		f.write('    <IntDir>' + getIntermediatePath(make, cfg) + '</IntDir>\n')
 		f.write('    <TargetName>' + getBinaryName(project['name'], cfg['type'], cfg['ctx']['target'], suffix) + '</TargetName>\n')
 		f.write('    <TargetExt>' + getBinaryExt(cfg['type'], cfg['ctx']['target']) + '</TargetExt>\n')
 		f.write('  </PropertyGroup>\n')
@@ -324,6 +329,13 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
+
+		align_dict = {'struct-member-align-1': 1, 'struct-member-align-2': 2, 'struct-member-align-4': 4, 'struct-member-align-8': 8, 'struct-member-align-16': 16}
+		for key in align_dict.keys():
+			if key in cflags:
+				f.write('      <StructMemberAlignment>' + str(align_dict[key]) + 'Bytes</StructMemberAlignment>\n')
+				break
+
 		if 'use-sse2' in cflags:
 			f.write('      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>\n')
 
