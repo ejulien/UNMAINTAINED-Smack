@@ -69,6 +69,12 @@ def getSubSystem(make, cfg):
 	subsystem = make.get('subsystem', cfg['ctx'])
 	return api.translate(subsystem, {'native': 'Windows', 'console': 'Console'}, 'Windows')
 
+def getRuntimeLibrary(make, cfg):
+	runtime = make.getBestMatch('runtime_library', cfg['ctx'])
+	if 'debug' in cfg['cflags']:
+		return api.translate(runtime, {'dynamic': 'MultiThreadedDebugDLL', 'static': 'MultiThreadedDebug'}, 'MultiThreadedDebugDLL')
+	return api.translate(runtime, {'dynamic': 'MultiThreadedDLL', 'static': 'MultiThreaded'}, 'MultiThreadedDLL')
+
 def getDefines(make, cfg):
 	list = ''
 	defines = make.getAcrossDependencies(cfg['deps'], 'define', cfg['ctx'])
@@ -336,6 +342,7 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
+		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
 
 		align_dict = {'struct-member-align-1': 1, 'struct-member-align-2': 2, 'struct-member-align-4': 4, 'struct-member-align-8': 8, 'struct-member-align-16': 16}
 		for key in align_dict.keys():

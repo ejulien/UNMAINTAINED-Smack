@@ -37,3 +37,6 @@ The following toolchain combinations are supported by this generator:
 
 * platform_toolset - The compiler revision to build the project with.
                         eg. make.set(platform_toolset, 'v110')
+
+* runtime_library - The runtime library version to link with the output
+                    binary.
