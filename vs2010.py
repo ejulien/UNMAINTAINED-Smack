@@ -369,39 +369,46 @@ def outputProject(make, project, projects, output_path):
 		f.write('  </ItemDefinitionGroup>\n')
 
 	# source files
-	files = make.get('files', project_ctx)
+	project['files'] = []
+	for cfg in project['configurations']:	# grab across all configurations
+		cfg['files'] = make.get('files', cfg['ctx'])
+		if cfg['files']:
+			cfg['files'] = [getSolutionFileName(file, output_path) for file in cfg['files']]
+			project['files'].extend(cfg['files'])
 
-	def getFile(name):
+	project['files'] = list(set(project['files']))
+	project['files'] = [{'name': file, 'skip_cfg': []} for file in project['files']]
+
+	if len(project['files']) == 0:
+		api.warning("No files added to project '" + project['name'] + "' in context " + str(project_ctx), 1)
+
+	# skipped configurations per file
+	def getProjectFile(name):
 		for file in project['files']:
 			if file['name'] == name:
 				return file
 		return None
 
-	project['files'] = []
-	if files != None:
-		for file in files:
-			project['files'].append({'name': getSolutionFileName(file, output_path)})
-	else:
-		api.warning("No files added to project '" + project['name'] + "' in context " + str(project_ctx), 1)
+	for cfg in project['configurations']:
+		skips = make.get('skip_files', cfg['ctx'])
+		if skips:
+			for skip in skips:
+				file = getProjectFile(getSolutionFileName(skip, output_path))
+				if file:
+					file['skip_cfg'].append(cfg)
 
-	distributeProjectFiles(make, project, output_path)
+	for file in project['files']:
+		for cfg in project['configurations']:
+			if file['name'] not in cfg['files']:
+				file['skip_cfg'].append(cfg)
 
 	# PCH creation per configuration
 	for cfg in project['configurations']:
 		create_pch = make.get('create_pch', cfg['ctx'])
 		cfg['create_pch'] = api.getRelativePath(create_pch[0], output_path, 'windows') if create_pch != None else ''
 
-	# skipped configurations per file
-	for cfg in project['configurations']:
-		skipped_names = make.get('skip_files', cfg['ctx'])
-		if skipped_names:
-			for name in skipped_names:
-				file = getFile(getSolutionFileName(name, output_path))
-				if file:
-					if 'skip_cfg' in file:
-						file['skip_cfg'].append(cfg)
-					else:
-						file['skip_cfg'] = [cfg]
+	# distribute over file categories	
+	distributeProjectFiles(make, project, output_path)
 
 	# output include files
 	f.write('  <ItemGroup>\n')

@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>b1abed0f-da9f-43f1-af5f-205e4781eff3</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>samples\simple_build.py</StartupFile>
+    <StartupFile>samples\v8build.py</StartupFile>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>kismake</Name>
@@ -33,6 +33,7 @@
     <Compile Include="dot_map.py" />
     <Compile Include="samples\complex_build.py" />
     <Compile Include="samples\simple_build.py" />
+    <Compile Include="samples\v8build.py" />
     <Compile Include="smack.py" />
     <Compile Include="vs2010.py" />
     <Compile Include="vs2010_android.py" />
