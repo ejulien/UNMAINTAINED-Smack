@@ -44,17 +44,10 @@ def getPDBName(base, suffix):
 	return base + suffix
 
 def getBinaryExt(type, target):
-	if target == 'windows':
-		return {
-			'staticlib': '.lib',
-			'dynamiclib': '.dll',
-			'executable': '.exe'
-		}[type]
-
 	return {
-		'staticlib': '.a',
-		'dynamiclib': '.so',
-		'executable': '.elf'
+		'staticlib': '.lib',
+		'dynamiclib': '.dll',
+		'executable': '.exe'
 	}[type]
 #------------------------------------------------------------------------------
 
