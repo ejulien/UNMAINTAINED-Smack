@@ -46,18 +46,23 @@ def getCompilationUnitDependencies(unit):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-def outputCompilationUnitBuildDirective(f, make, prj, unit):
-	f.write('\t$(CC) $(CFLAGS) -c -o ' + unit['obj'] + ' ' + unit['file'] + '\n')
+def outputCompilationUnitBuildDirective(f, make, prj, unit, output_path):
+	f.write('\t$(CC) $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
 def outputProjectBuildDirective(f, make, prj):
+	# output command start
 	if prj['type'] == 'staticlib':
 		f.write('\tar rcs ' + prj['obj'] + ' ')
 	elif prj['type'] == 'dynamiclib':
 		return
 	elif prj['type'] == 'executable':
-		f.write('\t$(CC) $(LDFLAGS) -o ' + prj['obj_path'] + '/' + prj['obj'] + ' ')
+		f.write('\t$(CC) $(LDFLAGS) -o ' + prj['obj'] + ' ')
+		# static linking for executables
+		for llink in prj['llinks']:
+			f.write('-l' + llink + ' ')
+
+	# output compilation units
 	for unit in prj['units']:
 		f.write(unit['obj'] + ' ')
-
 	f.write('\n')
 #------------------------------------------------------------------------------
 
@@ -109,25 +114,34 @@ def generateProject(build_env, make, ctx, output_path):
 def outputProject(f, build_env, make, prj, projects, output_path):
 	f.write("# Project '" + prj['name'] + "' object files.\n")
 
+	if prj['name'] == 'unit_test':
+		prj = prj
+
 	# prepare links
-	links = make.getLinksAcrossDependencies(deps, prj['ctx'])
+	def getProject(name):
+		for project in projects:
+			if project['name'] == name:
+				return project
+		return None
+
+	prj['plinks'] = []
+	prj['llinks'] = []
+	links = make.getLinksAcrossDependencies(prj['deps'], prj['ctx'])
 	for link in links:
-		prj = getProject(link, projects)	# is it a workspace project?
-		if prj:
-			if prj['type'] == 'staticlib':
-				l_static = l_static + prj['name'] + ' '
-			elif prj['type'] == 'dynamiclib':
-				l_shared = l_shared + prj['name'] + ' '
-			else:
-				l_ldlibs = l_ldlibs + '-l' + link + ' '
+		link_prj = getProject(link)	# is it a workspace project?
+		if link_prj:
+			if link_prj['type'] == 'staticlib':
+				prj['plinks'].append(link_prj)
+		else:
+			prj['llinks'].append(link)
 
 	# compilation unit targets
 	for unit in prj['units']:
 		f.write(unit['obj'] + ': ')
 		for dep in unit['deps']:
-			f.write(dep + ' ')
+			f.write(api.getRelativePath(dep, output_path) + ' ')
 		f.write('\n')
-		outputCompilationUnitBuildDirective(f, make, prj, unit)
+		outputCompilationUnitBuildDirective(f, make, prj, unit, output_path)
 
 	f.write('\n')
 
@@ -142,18 +156,21 @@ def outputProject(f, build_env, make, prj, projects, output_path):
 		mkdir_bin_target = '__dep_mkdir_bin_' + prj['name']	# dependency to create the binary output directory
 		f.write(mkdir_bin_target + ':\n\tmkdir -p ' + prj['bin_path'] + '\n')
 
-
 	if len(prj['includes']) > 0 or len(prj['defines']) > 0:
 		f.write(prj['obj'] + ': CFLAGS = ')
 		for include in prj['includes']:
-			f.write('-I' + include + ' ')
+			f.write('-I' + api.getRelativePath(include, output_path) + ' ')
 		for define in prj['defines']:
 			f.write('-D' + define + ' ')
 		f.write('\n')
 
+	# project dependencies
 	f.write(prj['obj'] + ': ')
 	if mkdir_obj_target: f.write(mkdir_obj_target + ' ')
 	if mkdir_bin_target: f.write(mkdir_bin_target + ' ')
+	if prj['plinks']:
+		for plink in prj['plinks']:
+			f.write(plink['obj'] + ' ')
 	for unit in prj['units']:
 		f.write(unit['obj'] + ' ')
 	f.write('\n')
@@ -166,13 +183,18 @@ def outputProject(f, build_env, make, prj, projects, output_path):
 
 #------------------------------------------------------------------------------
 def outputWorkspace(f, build_env, make, ctx, output_path):
-	projects = make.getConfigurationKeyValuesFilterByContext('project', ctx)
 
 	make_projects = []
-	for project in projects:
-		prj = generateProject(build_env, make, ctx.clone({'project': project}), projects, output_path)
-		if prj:
-			make_projects.append(prj)
+
+	groups = make.getConfigurationKeyValues('group')
+	for group in groups:
+		group_ctx = ctx.clone({'group': group})
+		projects = make.getConfigurationKeyValuesFilterByContext('project', group_ctx)
+
+		for project in projects:
+			prj = generateProject(build_env, make, group_ctx.clone({'project': project}), output_path)
+			if prj:
+				make_projects.append(prj)
 
 	for prj in make_projects:
 		outputProject(f, build_env, make, prj, make_projects, output_path)
@@ -191,11 +213,10 @@ def generate(make, toolchains, output_path):
 
 	# retrieve all workspaces
 	workspaces = make.getConfigurationKeyValues('workspace')
-	groups = make.getConfigurationKeyValues('group')
 
 	# process all workspaces
 	for workspace in workspaces:
-		builds = make.getConfigurationKeyValuesFilterByContext('build', smack.context().clone({'workspace': workspace}))	# all build in this workspace
+		builds = make.getConfigurationKeyValuesFilterByContext('build', smack.context({'workspace': workspace}))	# all build in this workspace
 
 		for toolchain in toolchains:
 			target = toolchain['target']
@@ -209,7 +230,5 @@ def generate(make, toolchains, output_path):
 					continue
 				build_env['builds'] = builds
 
-				for group in groups:
-					ctx = smack.context().clone({'workspace': workspace, 'group': group, 'target': target, 'arch': arch})
-					outputWorkspace(f, build_env, make, ctx, output_path)
+				outputWorkspace(f, build_env, make, smack.context({'workspace': workspace, 'target': target, 'arch': arch}), output_path)
 #------------------------------------------------------------------------------
