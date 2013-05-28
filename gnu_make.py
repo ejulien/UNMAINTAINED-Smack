@@ -19,7 +19,7 @@ def isTargetSupported(target):
 
 def getTargetBuildEnv(target, arch):
 	if target == 'linux' and arch == 'x86':
-		return {'CC': 'gcc'}
+		return {'CFLAGS': [''], 'LDFLAGS': ['-pthread']}
 	return None
 
 def getOutputFilename(file, output_path):
@@ -33,10 +33,14 @@ def isCompilationUnit(unit):
 			return True
 	return False
 
+def getCompilationUnitCommand(unit):
+	cu_commands = {'.cpp': 'CXX'}
+	if unit['ext'] in cu_commands:
+		return cu_commands[unit['ext']]
+	return 'CC'
+
 def getCompilationUnitObject(unit, obj_path):		# 'the target' in Make talk
-	split = os.path.split(unit)
-	spext = os.path.splitext(split[1])
-	return obj_path + '/' + spext[0] + '.o'
+	return obj_path + '/' + unit['basename'] + '.o'
 
 def getCompilationUnitDependencies(unit):
 	deps = []
@@ -47,22 +51,34 @@ def getCompilationUnitDependencies(unit):
 
 #------------------------------------------------------------------------------
 def outputCompilationUnitBuildDirective(f, make, prj, unit, output_path):
-	f.write('\t$(CC) $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
-def outputProjectBuildDirective(f, make, prj):
+	f.write('\t$(' + getCompilationUnitCommand(unit['ext']) + ') $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
+
+def outputProjectCompilationUnits(f, make, prj):
+	# output compilation units
+	for unit in prj['units']:
+		f.write(unit['obj'] + ' ')
+
+def outputProjectBuildDirective(f, make, prj, output_path):
 	# output command start
 	if prj['type'] == 'staticlib':
 		f.write('\tar rcs ' + prj['obj'] + ' ')
+		outputProjectCompilationUnits(f, make, prj)
 	elif prj['type'] == 'dynamiclib':
 		return
 	elif prj['type'] == 'executable':
-		f.write('\t$(CC) $(LDFLAGS) -o ' + prj['obj'] + ' ')
+		f.write('\t$(CC) $(GLOBAL_LDFLAGS) -o ' + prj['obj'] + ' ')
+
+		outputProjectCompilationUnits(f, make, prj)
+
+		f.write('-L' + prj['bin_path'] + ' ')
+
+		# workspace project linking
+		for plink in prj['plinks']:
+			f.write('-l' + plink['name'] + ' ')
 		# static linking for executables
 		for llink in prj['llinks']:
 			f.write('-l' + llink + ' ')
 
-	# output compilation units
-	for unit in prj['units']:
-		f.write(unit['obj'] + ' ')
 	f.write('\n')
 #------------------------------------------------------------------------------
 
@@ -78,7 +94,12 @@ def prepareCompilationUnits(files, obj_path, ctx):
 	for file in files:
 		if not isCompilationUnit(file):
 			continue
-		units.append({'file': file, 'obj': getCompilationUnitObject(file, obj_path), 'deps': getCompilationUnitDependencies(file)})
+		path_split = os.path.split(file)
+		file_split = os.path.splitext(path_split[1])
+
+		unit = {'file': file, 'basename': file_split[0], 'ext': file_split[1], 'deps': getCompilationUnitDependencies(file)}
+		unit['obj'] = getCompilationUnitObject(unit, obj_path)
+		units.append(unit)
 	return units
 
 def generateProject(build_env, make, ctx, output_path):
@@ -156,13 +177,13 @@ def outputProject(f, build_env, make, prj, projects, output_path):
 		mkdir_bin_target = '__dep_mkdir_bin_' + prj['name']	# dependency to create the binary output directory
 		f.write(mkdir_bin_target + ':\n\tmkdir -p ' + prj['bin_path'] + '\n')
 
+	f.write(prj['obj'] + ': CFLAGS = $(GLOBAL_CFLAGS) ')
 	if len(prj['includes']) > 0 or len(prj['defines']) > 0:
-		f.write(prj['obj'] + ': CFLAGS = ')
 		for include in prj['includes']:
 			f.write('-I' + api.getRelativePath(include, output_path) + ' ')
 		for define in prj['defines']:
 			f.write('-D' + define + ' ')
-		f.write('\n')
+	f.write('\n')
 
 	# project dependencies
 	f.write(prj['obj'] + ': ')
@@ -175,7 +196,7 @@ def outputProject(f, build_env, make, prj, projects, output_path):
 		f.write(unit['obj'] + ' ')
 	f.write('\n')
 
-	outputProjectBuildDirective(f, make, prj)
+	outputProjectBuildDirective(f, make, prj, output_path)
 
 	#
 	f.write('\n')
@@ -183,7 +204,6 @@ def outputProject(f, build_env, make, prj, projects, output_path):
 
 #------------------------------------------------------------------------------
 def outputWorkspace(f, build_env, make, ctx, output_path):
-
 	make_projects = []
 
 	groups = make.getConfigurationKeyValues('group')
@@ -201,15 +221,29 @@ def outputWorkspace(f, build_env, make, ctx, output_path):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
+def outputFlag(f, flag, key, build_env):
+	if key not in build_env:
+		return
+	f.write(flag + ' ?= ')
+	for value in build_env[key]:
+		f.write(value + ' ')
+	f.write('\n')
+
+def outputGlobals(f, build_env):
+	outputFlag(f, 'CC', 'CC', build_env)
+	outputFlag(f, 'CXX', 'CXX', build_env)
+	outputFlag(f, 'GLOBAL_CFLAGS', 'CFLAGS', build_env)
+	outputFlag(f, 'GLOBAL_LDFLAGS', 'LDFLAGS', build_env)
+	f.write('\n')
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 def generate(make, toolchains, output_path):
 	api.log('GNU makefile generator', 0)
 	api.log('Target directory: ' + output_path, 1)
 
 	if not os.path.exists(output_path):
 	    os.makedirs(output_path)
-
-	f = open(output_path + '/makefile', 'w')
-	outputHeader(f)
 
 	# retrieve all workspaces
 	workspaces = make.getConfigurationKeyValues('workspace')
@@ -230,5 +264,8 @@ def generate(make, toolchains, output_path):
 					continue
 				build_env['builds'] = builds
 
+				f = open(output_path + '/' + target + '-' + arch + '_' + workspace + '.mk', 'w')
+				outputHeader(f)
+				outputGlobals(f, build_env)
 				outputWorkspace(f, build_env, make, smack.context({'workspace': workspace, 'target': target, 'arch': arch}), output_path)
 #------------------------------------------------------------------------------
