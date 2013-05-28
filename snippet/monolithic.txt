@@ -1,0 +1,31 @@
+# Import all dependency values to build a project as a monolithic project.
+
+prjs = ['project_a', 'project_b']
+
+def collectDependencies(make, prjs):
+	ctx = smack.context()
+	ctx.set('gs', '*', None, None, None, None)
+
+	deps = []
+	for prj in prjs:
+		deps.extend(make.getDependencies(ctx.clone({'project': prj})))
+	deps.extend(prjs)
+
+	return list(set(deps))
+
+	deps = collectDependencies(make, em_deps)
+
+	def getProjectsKeyValues(make, key, prjs):
+		ctx = smack.context()
+		ctx.set('gs', '*', None, None, None, None)
+
+		values = []
+		for prj in prjs:
+			v = make.get(key, ctx.clone({'project': prj}))
+			if v:
+				values.extend(v)
+
+		return list(set(values))
+
+	make.set('files', getProjectsKeyValues(make, 'files', deps))
+	make.set('include_path', getProjectsKeyValues(make, 'include_path', deps))

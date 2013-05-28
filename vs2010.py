@@ -25,15 +25,8 @@ def platformFromTargetArchitecture(target, arch):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-def getBinaryName(base, type, target, suffix):
-	if suffix == None:
-		suffix = ''
-	else:
-		suffix = suffix[0]
-
-	if target == 'windows':
-		return base + suffix
-	return 'lib' + base + suffix
+def getBinaryName(name, type, target):
+	return name
 
 def getPDBName(base, suffix):
 	if suffix == None:
@@ -44,11 +37,12 @@ def getPDBName(base, suffix):
 	return base + suffix
 
 def getBinaryExt(type, target):
-	return {
+	types = {
 		'staticlib': '.lib',
 		'dynamiclib': '.dll',
 		'executable': '.exe'
-	}[type]
+	}
+	return types[type] if type in types else '.lib'
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -306,11 +300,16 @@ def outputProject(make, project, projects, output_path):
 
 	# binary output
 	for cfg in project['configurations']:
-		suffix = make.get('bin_suffix', cfg['ctx'])
 		f.write('  <PropertyGroup ' + getCondition(cfg) + '>\n')
 		f.write('    <OutDir>' + getBinaryPath(make, cfg) + '</OutDir>\n')
 		f.write('    <IntDir>' + getIntermediatePath(make, cfg) + '</IntDir>\n')
-		f.write('    <TargetName>' + getBinaryName(project['name'], cfg['type'], cfg['ctx']['target'], suffix) + '</TargetName>\n')
+
+		target_name = getBinaryName(project['name'], cfg['type'], cfg['ctx']['target'])
+		suffix = make.getBestMatch('bin_suffix', cfg['ctx'])
+		if suffix:
+			target_name += suffix
+
+		f.write('    <TargetName>' + target_name + '</TargetName>\n')
 		f.write('    <TargetExt>' + getBinaryExt(cfg['type'], cfg['ctx']['target']) + '</TargetExt>\n')
 		f.write('  </PropertyGroup>\n')
 

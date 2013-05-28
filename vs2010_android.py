@@ -4,13 +4,19 @@
 import api, vs2010
 
 def getBinaryExt(base, type, target):
-	if target == 'android':
-		return {
-			'staticlib': '.a',
-			'dynamiclib': '.so',
-			'executable': '.elf'
-		}[type]
+	types = {
+		'staticlib': '.a',
+		'dynamiclib': '.so',
+		'executable': '.elf'
+	}
+	if target == 'android' and type in types:
+		return types[type]
 	return base(type, target)
+
+def getBinaryName(base, name, type, target):
+	if target == 'android':
+		return name if type == 'executable' else 'lib' + name
+	return base(name, type, target)
 
 def platformFromTargetArchitecture(base, target, arch):
 	return 'Android' if target == 'android' and arch in ['ARMv7', 'ARMv5', 'Mips', 'x86'] else base(target, arch)
@@ -48,4 +54,5 @@ def install():
 	vs2010.platformFromTargetArchitecture = api.hook(vs2010.platformFromTargetArchitecture, platformFromTargetArchitecture)
 	vs2010.outputGeneralProjectProperty = api.hook(vs2010.outputGeneralProjectProperty, outputGeneralProjectProperty)
 	vs2010.formatTargetDependency = api.hook(vs2010.formatTargetDependency, formatTargetDependency)
+	vs2010.getBinaryName = api.hook(vs2010.getBinaryName, getBinaryName)
 	vs2010.getBinaryExt = api.hook(vs2010.getBinaryExt, getBinaryExt)
