@@ -34,8 +34,8 @@ def isCompilationUnit(unit):
 	return False
 
 def getCompilationUnitCommand(unit):
-	cu_commands = {'.cpp': 'CXX'}
-	if unit['ext'] in cu_commands:
+	cu_commands = {'.cpp': 'CXX', '.cxx': 'CXX', '.cc': 'CXX', '.cp': 'CXX'}
+	if unit['ext'].lower() in cu_commands:
 		return cu_commands[unit['ext']]
 	return 'CC'
 
@@ -51,7 +51,7 @@ def getCompilationUnitDependencies(unit):
 
 #------------------------------------------------------------------------------
 def outputCompilationUnitBuildDirective(f, make, prj, unit, output_path):
-	f.write('\t$(' + getCompilationUnitCommand(unit['ext']) + ') $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
+	f.write('\t$(' + getCompilationUnitCommand(unit) + ') $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
 
 def outputProjectCompilationUnits(f, make, prj):
 	# output compilation units
@@ -134,9 +134,6 @@ def generateProject(build_env, make, ctx, output_path):
 
 def outputProject(f, build_env, make, prj, projects, output_path):
 	f.write("# Project '" + prj['name'] + "' object files.\n")
-
-	if prj['name'] == 'unit_test':
-		prj = prj
 
 	# prepare links
 	def getProject(name):
