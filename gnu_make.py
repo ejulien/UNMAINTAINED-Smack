@@ -33,10 +33,10 @@ def isCompilationUnit(unit):
 			return True
 	return False
 
-def getCompilationUnitObject(unit):		# 'the target' in Make talk
+def getCompilationUnitObject(unit, obj_path):		# 'the target' in Make talk
 	split = os.path.split(unit)
 	spext = os.path.splitext(split[1])
-	return spext[0] + '.o'
+	return obj_path + '/' + spext[0] + '.o'
 
 def getCompilationUnitDependencies(unit):
 	deps = []
@@ -47,11 +47,17 @@ def getCompilationUnitDependencies(unit):
 
 #------------------------------------------------------------------------------
 def outputCompilationUnitBuildDirective(f, make, prj, unit):
-	f.write('\t$(CC) $(BUILD_CFLAGS) -o $(BUILD_OBJ_PATH)/' + unit['obj'] + ' ' + unit['file'] + '\n')
+	f.write('\t$(CC) $(CFLAGS) -c -o ' + unit['obj'] + ' ' + unit['file'] + '\n')
 def outputProjectBuildDirective(f, make, prj):
-	f.write('\t$(CC) $(BUILD_LDFLAGS) -o $(BUILD_OBJ_PATH)/' + prj['obj'] + ' ')
+	if prj['type'] == 'staticlib':
+		f.write('\tar rcs ' + prj['obj'] + ' ')
+	elif prj['type'] == 'dynamiclib':
+		return
+	elif prj['type'] == 'executable':
+		f.write('\t$(CC) $(LDFLAGS) -o ' + prj['obj_path'] + '/' + prj['obj'] + ' ')
 	for unit in prj['units']:
-		f.write('$(BUILD_OBJ_PATH)/' + unit['obj'] + ' ')
+		f.write(unit['obj'] + ' ')
+
 	f.write('\n')
 #------------------------------------------------------------------------------
 
@@ -62,12 +68,12 @@ def getProjectObject(project, type):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-def prepareCompilationUnits(files):
+def prepareCompilationUnits(files, obj_path, ctx):
 	units = []
 	for file in files:
 		if not isCompilationUnit(file):
 			continue
-		units.append({'file': file, 'obj': getCompilationUnitObject(file), 'deps': getCompilationUnitDependencies(file)})
+		units.append({'file': file, 'obj': getCompilationUnitObject(file, obj_path), 'deps': getCompilationUnitDependencies(file)})
 	return units
 
 def generateProject(build_env, make, ctx, output_path):
@@ -83,38 +89,74 @@ def generateProject(build_env, make, ctx, output_path):
 	skip_files = make.get('skip_files', ctx)
 	if not skip_files: skip_files = []
 
+	prj['obj_path'] = 'obj/' + ctx['target'] + '/' + ctx['project']
+	prj['bin_path'] = 'bin/' + ctx['target']
+
 	prj['files'] = [api.normPathForOs(file) for file in files if file not in skip_files]
-	prj['units'] = prepareCompilationUnits(prj['files'])
+	prj['units'] = prepareCompilationUnits(prj['files'], prj['obj_path'], ctx)
 
-	type = make.getBestMatch('type', ctx)
-	prj['obj'] = getProjectObject(prj['name'], type)
+	deps = make.getDependencies(ctx)
+	prj['deps'] = deps
 
-	prj['includes'] = make.get('include_path', ctx)
-	prj['defines'] = make.get('define', ctx)
+	prj['type'] = make.getBestMatch('type', ctx)
+	prj['obj'] = prj['bin_path'] + '/' + getProjectObject(prj['name'], prj['type'])
+
+	prj['includes'] = make.getAcrossDependencies(deps, 'include_path', ctx)
+	prj['defines'] = make.getAcrossDependencies(deps, 'define', ctx)
+
 	return prj
 
-def outputProject(f, build_env, make, prj, output_path):
+def outputProject(f, build_env, make, prj, projects, output_path):
 	f.write("# Project '" + prj['name'] + "' object files.\n")
+
+	# prepare links
+	links = make.getLinksAcrossDependencies(deps, prj['ctx'])
+	for link in links:
+		prj = getProject(link, projects)	# is it a workspace project?
+		if prj:
+			if prj['type'] == 'staticlib':
+				l_static = l_static + prj['name'] + ' '
+			elif prj['type'] == 'dynamiclib':
+				l_shared = l_shared + prj['name'] + ' '
+			else:
+				l_ldlibs = l_ldlibs + '-l' + link + ' '
+
+	# compilation unit targets
 	for unit in prj['units']:
-		f.write(unit['obj'] + ':\t')
+		f.write(unit['obj'] + ': ')
 		for dep in unit['deps']:
 			f.write(dep + ' ')
 		f.write('\n')
 		outputCompilationUnitBuildDirective(f, make, prj, unit)
 
 	f.write('\n')
-	f.write(prj['obj'] + ':\t')
-	for unit in prj['units']:
-		f.write(unit['obj'] + ' ')
-	f.write('\n')
+
+	# project target
+	mkdir_obj_target = None
+	if prj['obj_path']:
+		mkdir_obj_target = '__dep_mkdir_obj_' + prj['name']	# dependency to create the object output directory
+		f.write(mkdir_obj_target + ':\n\tmkdir -p ' + prj['obj_path'] + '\n')
+
+	mkdir_bin_target = None
+	if prj['bin_path']:
+		mkdir_bin_target = '__dep_mkdir_bin_' + prj['name']	# dependency to create the binary output directory
+		f.write(mkdir_bin_target + ':\n\tmkdir -p ' + prj['bin_path'] + '\n')
+
 
 	if len(prj['includes']) > 0 or len(prj['defines']) > 0:
-		f.write('\t$(BUILD_CFLAGS) += ')
+		f.write(prj['obj'] + ': CFLAGS = ')
 		for include in prj['includes']:
 			f.write('-I' + include + ' ')
 		for define in prj['defines']:
 			f.write('-D' + define + ' ')
 		f.write('\n')
+
+	f.write(prj['obj'] + ': ')
+	if mkdir_obj_target: f.write(mkdir_obj_target + ' ')
+	if mkdir_bin_target: f.write(mkdir_bin_target + ' ')
+	for unit in prj['units']:
+		f.write(unit['obj'] + ' ')
+	f.write('\n')
 
 	outputProjectBuildDirective(f, make, prj)
 
@@ -128,12 +170,12 @@ def outputWorkspace(f, build_env, make, ctx, output_path):
 
 	make_projects = []
 	for project in projects:
-		prj = generateProject(build_env, make, ctx.clone({'project': project}), output_path)
+		prj = generateProject(build_env, make, ctx.clone({'project': project}), projects, output_path)
 		if prj:
 			make_projects.append(prj)
 
 	for prj in make_projects:
-		outputProject(f, build_env, make, prj, output_path)
+		outputProject(f, build_env, make, prj, make_projects, output_path)
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
