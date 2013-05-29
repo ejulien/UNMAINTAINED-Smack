@@ -24,6 +24,7 @@ Features
 * Intel Compiler extension for the vs2010 generator.
 * VSAndroid (Android for Visual Studio) extension for the vs2010 generator,
 * Native Android JNI makefile generator,
+* GNU makefile generator,
 * Project dependencies to inherit build properties and automatic makefile link order,
 * Graphviz generator to output a graph of project dependencies,
 * Output several solutions/project/targets from the same build file,
