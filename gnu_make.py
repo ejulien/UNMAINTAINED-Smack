@@ -1,9 +1,5 @@
 # smack - Emmanuel Julien 2013 (ejulien@owloh.com)
 # MIT Licensed
-#
-# Note: I have no idea what I'm doing. The only thing I know is that I want
-# minimal rebuild when touching a file AND correct builds when touching header
-# files only.
 
 import os, copy, api, smack
 
@@ -19,7 +15,7 @@ def isTargetSupported(target):
 
 def getTargetBuildEnv(target, arch):
 	if target == 'linux' and arch == 'x86':
-		return {'CFLAGS': [''], 'LDFLAGS': ['-pthread']}
+		return {'CXX': ['g++'], 'CFLAGS': [''], 'LDFLAGS': ['-pthread']}
 	return None
 
 def getOutputFilename(file, output_path):
@@ -34,10 +30,10 @@ def isCompilationUnit(unit):
 	return False
 
 def getCompilationUnitCommand(unit):
-	cu_commands = {'.cpp': 'CXX', '.cxx': 'CXX', '.cc': 'CXX', '.cp': 'CXX'}
+	cu_commands = {'.cpp': '$(CXX)', '.cxx': '$(CXX)', '.cc': '$(CXX)', '.cp': '$(CXX)'}
 	if unit['ext'].lower() in cu_commands:
 		return cu_commands[unit['ext']]
-	return 'CC'
+	return '$(CC)'
 
 def getCompilationUnitObject(unit, obj_path):		# 'the target' in Make talk
 	return obj_path + '/' + unit['basename'] + '.o'
@@ -51,41 +47,49 @@ def getCompilationUnitDependencies(unit):
 
 #------------------------------------------------------------------------------
 def outputCompilationUnitBuildDirective(f, make, prj, unit, output_path):
-	f.write('\t$(' + getCompilationUnitCommand(unit) + ') $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
+	f.write('\t' + getCompilationUnitCommand(unit) + ' $(CFLAGS) -c -o ' + unit['obj'] + ' ' + api.getRelativePath(unit['file'], output_path) + '\n')
 
 def outputProjectCompilationUnits(f, make, prj):
 	# output compilation units
 	for unit in prj['units']:
 		f.write(unit['obj'] + ' ')
 
+def outputStaticLibBuildDirective(f, make, prj, output_path):
+	f.write('\tar rcs ' + prj['obj'] + ' ')
+	outputProjectCompilationUnits(f, make, prj)
+
+def outputDynamicLibBuildDirective(f, make, prj, output_path):
+	return
+
+def outputExecutableBuildDirective(f, make, prj, output_path):
+	f.write('\t$(CXX) $(GLOBAL_LDFLAGS) -o ' + prj['obj'] + ' ')
+	outputProjectCompilationUnits(f, make, prj)
+
+	# linkage
+	f.write('-L' + prj['bin_path'] + ' ')
+	for plink in prj['plinks']:
+		f.write('-l' + plink['name'] + ' ')
+	for llink in prj['llinks']:
+		f.write('-l' + llink + ' ')
+
 def outputProjectBuildDirective(f, make, prj, output_path):
-	# output command start
 	if prj['type'] == 'staticlib':
-		f.write('\tar rcs ' + prj['obj'] + ' ')
-		outputProjectCompilationUnits(f, make, prj)
+		outputStaticLibBuildDirective(f, make, prj, output_path)
 	elif prj['type'] == 'dynamiclib':
-		return
+		outputDynamicLibBuildDirective(f, make, prj, output_path)
 	elif prj['type'] == 'executable':
-		f.write('\t$(CC) $(GLOBAL_LDFLAGS) -o ' + prj['obj'] + ' ')
-
-		outputProjectCompilationUnits(f, make, prj)
-
-		f.write('-L' + prj['bin_path'] + ' ')
-
-		# workspace project linking
-		for plink in prj['plinks']:
-			f.write('-l' + plink['name'] + ' ')
-		# static linking for executables
-		for llink in prj['llinks']:
-			f.write('-l' + llink + ' ')
-
+		outputExecutableBuildDirective(f, make, prj, output_path)
 	f.write('\n')
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-def getProjectObject(project, type):
+def getProjectObjectBase(project, type):
 	exts = {'staticlib': '.a', 'dynamiclib': '.so', 'executable': '.elf'}
 	return project + exts[type] if type in exts else project + '.o'
+
+def getProjectObject(project, type):
+	base = getProjectObjectBase(project, type)
+	return 'lib' + base if type == 'staticlib' else base
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -221,7 +225,7 @@ def outputWorkspace(f, build_env, make, ctx, output_path):
 def outputFlag(f, flag, key, build_env):
 	if key not in build_env:
 		return
-	f.write(flag + ' ?= ')
+	f.write(flag + ' = ')
 	for value in build_env[key]:
 		f.write(value + ' ')
 	f.write('\n')
