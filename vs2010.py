@@ -334,6 +334,8 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
+		if 'omit-frame-pointers' in cflags:
+			f.write('      <OmitFramePointers>true</OmitFramePointers>\n')
 		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
 
 		align_dict = {'struct-member-align-1': 1, 'struct-member-align-2': 2, 'struct-member-align-4': 4, 'struct-member-align-8': 8, 'struct-member-align-16': 16}
