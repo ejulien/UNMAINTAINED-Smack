@@ -57,7 +57,7 @@ class context:
 
 	# modify context
 	def mod(self, mods):
-		if mods != None:
+		if mods:
 			for k in mods.keys():
 				if type(mods[k]) == list:
 					raise Exception('Cannot mod a context with several values for a given filter, please use clone() for this') 
@@ -123,6 +123,9 @@ class make:
 		self.ctx.push()
 	def pop(self):
 		self.ctx.pop()
+
+	def mod(self, mods):
+		self.ctx.mod(mods)
 
 	def setContext(self, ext):
 		self.ctx.set(ext['workspace'], ext['group'], ext['project'], ext['build'], ext['target'], ext['arch'])

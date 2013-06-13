@@ -58,6 +58,7 @@ The following keys should ideally be supported by all generators.
                     chain.
 
 * files         -   Files to compile.
+* skip_files    -   Do not build specific files.
 * output_path   -   Output path for the generated makefile/solution/project.
 * bin_path      -   Output path for the generated binaries.
 * obj_path      -   Output path for the intermediate build files.
@@ -74,7 +75,6 @@ The following keys should ideally be supported by all generators.
 * pflags        -   Project flags.
 
     'skip_build'        Do not build the project.
-    'skip_files'        Do not build specific files.
 
 * cflags        -   Compiler flags.
 
