@@ -36,7 +36,8 @@ The following toolchain combinations are supported by this generator:
     'x64'               64-bit Intel compatible
 
 * cflags		-	Compiler flags
-	'omit-frame-pointers'	Omit frame pointer.
+
+    'omit-frame-pointers'   Omit frame pointer.
 
 * platform_toolset - The compiler revision to build the project with.
                         eg. make.set(platform_toolset, 'v110')

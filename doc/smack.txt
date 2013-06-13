@@ -64,7 +64,7 @@ The following keys should ideally be supported by all generators.
 * obj_path      -   Output path for the intermediate build files.
 * bin_suffix    -   Suffix to be appended to the generated binaries name.
 * include_path  -   Additional include path.
-* lib_path      -   Additional include library.
+* lib_path      -   Additional library path.
 * type          -   Type of binary to produce ['staticlib', 'dynamiclib',
                     'executable']
 
@@ -83,8 +83,8 @@ The following keys should ideally be supported by all generators.
     'O0' to 'O3'        Level of optimization (3 max. optimization)
     'W0' to 'W4'        Warning level
 
-    'maxsize'           Optimize for size.
-    'maxspeed'          Optimize for speed.
+    'favor-size'        Optimize for size.
+    'favor-speed'       Optimize for speed.
 
     'fp-fast'           Fast floating-point
     'fp-precise'        Precise floating-point

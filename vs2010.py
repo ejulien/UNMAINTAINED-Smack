@@ -105,7 +105,7 @@ def getAdditionalLibraryDirectories(make, cfg, output_path):
 def getDebugInformation(cflags):
 	return 'EditAndContinue' if 'debug' in cflags else 'ProgramDatabase'
 def getOptimization(cflags):
-	return api.translate(cflags, {'maxspeed': 'MaxSpeed', 'maxsize': 'MaxSize', 'optimize': 'Full'}, 'Disabled')
+	return api.translate(cflags, {'O3': 'Full', 'O2': 'MaxSpeed', 'O1': 'MinSpace'}, 'Disabled')
 def useDebugLibrairies(cflags):
 	return 'true' if 'debug' in cflags else 'false'
 
@@ -338,6 +338,12 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
+
+		if 'favor-speed' in cflags:
+			f.write('      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>\n')
+		elif 'favor-size' in cflags:
+			f.write('      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>\n')
+
 		if 'omit-frame-pointers' in cflags:
 			f.write('      <OmitFramePointers>true</OmitFramePointers>\n')
 		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
