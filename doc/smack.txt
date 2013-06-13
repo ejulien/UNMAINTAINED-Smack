@@ -64,7 +64,7 @@ The following keys should ideally be supported by all generators.
 * obj_path      -   Output path for the intermediate build files.
 * bin_suffix    -   Suffix to be appended to the generated binaries name.
 * include_path  -   Additional include path.
-* lib_path      -   Additional include library.
+* lib_path      -   Additional library path.
 * type          -   Type of binary to produce ['staticlib', 'dynamiclib',
                     'executable']
 
