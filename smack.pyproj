@@ -5,7 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>b1abed0f-da9f-43f1-af5f-205e4781eff3</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>samples\v8build.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>kismake</Name>
@@ -37,6 +38,7 @@
     <Compile Include="smack.py" />
     <Compile Include="vs2010.py" />
     <Compile Include="vs2010_android.py" />
+    <Compile Include="vs2010_asm.py" />
     <Compile Include="vs2010_icc.py" />
     <Compile Include="vs2010_qt.py" />
   </ItemGroup>
