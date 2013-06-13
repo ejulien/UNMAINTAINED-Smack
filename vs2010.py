@@ -75,6 +75,10 @@ def getRuntimeLibrary(make, cfg):
 		return api.translate(runtime, {'dynamic': 'MultiThreadedDebugDLL', 'static': 'MultiThreadedDebug'}, 'MultiThreadedDebugDLL')
 	return api.translate(runtime, {'dynamic': 'MultiThreadedDLL', 'static': 'MultiThreaded'}, 'MultiThreadedDLL')
 
+def getAdditionalOptions(make, cfg):
+	options = make.getBestMatch('additional_options', cfg['ctx'])
+	return options
+
 def getDefines(make, cfg):
 	list = ''
 	defines = make.getAcrossDependencies(cfg['deps'], 'define', cfg['ctx'])
@@ -343,6 +347,11 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
 		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
+
+		additionalOptions = getAdditionalOptions(make, cfg)
+
+		if additionalOptions != None:
+			f.write('      <AdditionalOptions>' + additionalOptions + ' %(AdditionalOptions)</AdditionalOptions>\n')
 
 		align_dict = {'struct-member-align-1': 1, 'struct-member-align-2': 2, 'struct-member-align-4': 4, 'struct-member-align-8': 8, 'struct-member-align-16': 16}
 		for key in align_dict.keys():

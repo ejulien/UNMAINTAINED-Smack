@@ -11,8 +11,14 @@ def outputGeneralProjectProperty(base, f, make, project, cfg):
 	base(f, make, project, cfg)
 
 	cflags = cfg['cflags']
-	if 'use-ipp' in cflags:
-		f.write('    <UseIntelIPP>True</UseIntelIPP>\n')
+	if 'use-Parallel_Static-ipp' in cflags:
+		f.write('    <UseIntelIPP>Parallel_Static</UseIntelIPP>\n')
+	elif 'use-Parallel_Dynamic-ipp' in cflags:
+		f.write('    <UseIntelIPP>Parallel_Dynamic</UseIntelIPP>\n')
+	elif 'use-Sequential-ipp' in cflags:
+		f.write('    <UseIntelIPP>Sequential</UseIntelIPP>\n')
+	elif 'use-ipp' in cflags:
+		f.write('    <UseIntelIPP>true</UseIntelIPP>\n')
 
 def install():
 	vs2010.getPlatformToolset = api.hook(vs2010.getPlatformToolset, getPlatformToolset)
