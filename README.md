@@ -18,20 +18,21 @@ Both Python 2 and 3 series are supported.
 Features
 --------
 
-* Visual Studio 2010 C++ solutions and project generator,
-* Qt extension for the vs2010 generator (Qt-addin isn't required),
+* Visual Studio 2010 C++ solutions and project generator.
+* Qt extension for the vs2010 generator (Qt-addin isn't required).
 * MFC extension for the vs2010 generator.
 * Intel Compiler extension for the vs2010 generator.
-* VSAndroid (Android for Visual Studio) extension for the vs2010 generator,
-* Native Android JNI makefile generator,
-* GNU makefile generator,
-* Emscripten target addin for the vs2010 and GNU makefile generators,
-* Project dependencies to inherit build properties and automatic makefile link order,
-* Graphviz generator to output a graph of project dependencies,
-* Output several solutions/project/targets from the same build file,
-* Paper-thin API meant to stay this way,
-* Easy to extend existing generators,
-* Each generator is independent,
+* VSAndroid (Android for Visual Studio) extension for the vs2010 generator.
+* ASM extension for the vs2010 to build assembly files using a custom build tool.
+* Native Android JNI makefile generator.
+* GNU makefile generator.
+* Emscripten target addin for the vs2010 and GNU makefile generators.
+* Project dependencies to inherit build properties and automatic makefile link order.
+* Graphviz generator to output a graph of project dependencies.
+* Output several solutions/project/targets from the same build file.
+* Paper-thin API meant to stay this way.
+* Easy to extend existing generators.
+* Each generator is independent.
 * Free beer.
 
 Have a look in the doc/ folder for more informations on what's supported. Contributions are welcome.
