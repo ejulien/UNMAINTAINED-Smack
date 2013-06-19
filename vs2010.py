@@ -56,14 +56,46 @@ def getSubSystem(make, cfg):
 	subsystem = make.get('subsystem', cfg['ctx'])
 	return api.translate(subsystem, {'native': 'Windows', 'console': 'Console'}, 'Windows')
 
+def getModuleDefinitionFile(make, cfg):
+	moduledefinitionfile = make.getBestMatch('module_definition_file', cfg['ctx'])
+	return moduledefinitionfile
+
+def getPreBuildEventCommand(make, cfg):
+	command = make.getBestMatch('pre_build_event_command', cfg['ctx'])
+	return command
+
+def getPreBuildEventMessage(make, cfg):
+	message = make.getBestMatch('pre_build_event_message', cfg['ctx'])
+	return message
+
+def getPreLinkEventCommand(make, cfg):
+	command = make.getBestMatch('pre_link_event_command', cfg['ctx'])
+	return command
+
+def getPreLinkEventMessage(make, cfg):
+	message = make.getBestMatch('pre_link_event_message', cfg['ctx'])
+	return message
+
+def getPostBuildEventCommand(make, cfg):
+	command = make.getBestMatch('post_build_event_command', cfg['ctx'])
+	return command
+
+def getPostBuildEventMessage(make, cfg):
+	message = make.getBestMatch('post_build_event_message', cfg['ctx'])
+	return message
+
 def getRuntimeLibrary(make, cfg):
 	runtime = make.getBestMatch('runtime_library', cfg['ctx'])
 	if 'debug' in cfg['cflags']:
 		return api.translate(runtime, {'dynamic': 'MultiThreadedDebugDLL', 'static': 'MultiThreadedDebug'}, 'MultiThreadedDebugDLL')
 	return api.translate(runtime, {'dynamic': 'MultiThreadedDLL', 'static': 'MultiThreaded'}, 'MultiThreadedDLL')
 
-def getAdditionalOptions(make, cfg):
-	options = make.getBestMatch('additional_options', cfg['ctx'])
+def getAdditionalClOptions(make, cfg):
+	options = make.getBestMatch('additional_Cl_options', cfg['ctx'])
+	return options
+
+def getAdditionalLinkOptions(make, cfg):
+	options = make.getBestMatch('additional_link_options', cfg['ctx'])
 	return options
 
 def getDefines(make, cfg):
@@ -105,7 +137,7 @@ def getAdditionalLibraryDirectories(make, cfg, output_path):
 def getDebugInformation(cflags):
 	return 'EditAndContinue' if 'debug' in cflags else 'ProgramDatabase'
 def getOptimization(cflags):
-	return api.translate(cflags, {'O3': 'Full', 'O2': 'MaxSpeed', 'O1': 'MinSpace'}, 'Disabled')
+	return api.translate(cflags, {'maxspeed': 'MaxSpeed', 'maxsize': 'MaxSize', 'optimize': 'Full'}, 'Disabled')
 def useDebugLibrairies(cflags):
 	return 'true' if 'debug' in cflags else 'false'
 
@@ -155,6 +187,7 @@ def outputGeneralProjectProperty(f, make, project, cfg):
 	f.write('    <CharacterSet>' + getUnicode(cflags) + '</CharacterSet>\n')
 
 	toolset = getPlatformToolset(make, cfg['ctx'])
+
 	if toolset:
 		f.write('    <PlatformToolset>' + toolset + '</PlatformToolset>\n')
 
@@ -196,7 +229,7 @@ def outputProjectExtensionTag(f, make, project):
 
 def getFileCategory(project, file, output_path):
 	ext = os.path.splitext(file['name'])[1].lower()
-	if ext in ['.cpp', '.c', '.cc']:
+	if ext in ['.cpp', '.c', '.cc', '.cxx']:
 		return 'source_files'
 	elif ext in ['.h', '.hpp']:
 		return 'include_files'
@@ -230,6 +263,16 @@ def outputPCHDirective(f, project, file):
 		else:
 			if file['name'] == cfg['create_pch']:
 				f.write('      <PrecompiledHeader ' + getCondition(cfg) + '>Create</PrecompiledHeader>\n')
+
+def outputBigObjDirective(f, project, file):
+	if 'bigobj_cfg' in file:
+		for cfg in file['bigobj_cfg']:
+			f.write('      <AdditionalOptions ' + getCondition(cfg) + '>/bigobj %(AdditionalOptions)</AdditionalOptions>\n')
+
+def outputNoPchDirective(f, file):
+	if 'nopch_cfg' in file:
+		for cfg in file['nopch_cfg']:
+			f.write('      <PrecompiledHeader ' + getCondition(cfg) + '>NotUsing</PrecompiledHeader>\n')
 
 def outputExcludeFileFromBuildDirective(f, file):
 	if 'skip_cfg' in file:
@@ -308,13 +351,20 @@ def outputProject(make, project, projects, output_path):
 		f.write('    <OutDir>' + getBinaryPath(make, cfg) + '</OutDir>\n')
 		f.write('    <IntDir>' + getIntermediatePath(make, cfg) + '</IntDir>\n')
 
-		target_name = getBinaryName(project['name'], cfg['type'], cfg['ctx']['target'])
+		target_name = make.getBestMatch('target_name', cfg['ctx'])
+		if not target_name:
+			target_name = getBinaryName(project['name'], cfg['type'], cfg['ctx']['target'])
+
 		suffix = make.getBestMatch('bin_suffix', cfg['ctx'])
 		if suffix:
 			target_name += suffix
 
+		target_ext = make.getBestMatch('bin_ext', cfg['ctx'])
+		if not target_ext:
+			target_ext = getBinaryExt(cfg['type'], cfg['ctx']['target'])
+
 		f.write('    <TargetName>' + target_name + '</TargetName>\n')
-		f.write('    <TargetExt>' + getBinaryExt(cfg['type'], cfg['ctx']['target']) + '</TargetExt>\n')
+		f.write('    <TargetExt>' + target_ext + '</TargetExt>\n')
 		f.write('  </PropertyGroup>\n')
 
 	# compiler / linker properties
@@ -338,20 +388,13 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
-
-		if 'favor-speed' in cflags:
-			f.write('      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>\n')
-		elif 'favor-size' in cflags:
-			f.write('      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>\n')
-
 		if 'omit-frame-pointers' in cflags:
 			f.write('      <OmitFramePointers>true</OmitFramePointers>\n')
 		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
 
-		additionalOptions = getAdditionalOptions(make, cfg)
-
-		if additionalOptions != None:
-			f.write('      <AdditionalOptions>' + additionalOptions + ' %(AdditionalOptions)</AdditionalOptions>\n')
+		additionalClOptions = getAdditionalClOptions(make, cfg)
+		if additionalClOptions != None:
+			f.write('      <AdditionalOptions>' + additionalClOptions + ' %(AdditionalOptions)</AdditionalOptions>\n')
 
 		align_dict = {'struct-member-align-1': 1, 'struct-member-align-2': 2, 'struct-member-align-4': 4, 'struct-member-align-8': 8, 'struct-member-align-16': 16}
 		for key in align_dict.keys():
@@ -370,10 +413,47 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <AdditionalDependencies>' + getAdditionalDependencies(make, cfg, projects) + '</AdditionalDependencies>\n')
 		f.write('      <AdditionalLibraryDirectories>' + getAdditionalLibraryDirectories(make, cfg, output_path) +'</AdditionalLibraryDirectories>\n')
 		f.write('      <GenerateDebugInformation>' + ('True' if ('debug' in cfg['cflags']) else 'False') + '</GenerateDebugInformation>\n')
+
+		ModuleDefFile = getModuleDefinitionFile(make, cfg);
+		if (ModuleDefFile != None):
+			f.write('      <ModuleDefinitionFile>' + ModuleDefFile + '</ModuleDefinitionFile>\n')
+
+		additionalLinkOptions = getAdditionalLinkOptions(make, cfg)
+		if additionalLinkOptions != None:
+			f.write('      <AdditionalOptions>' + additionalLinkOptions + ' %(AdditionalOptions)</AdditionalOptions>\n')
+
 		f.write('    </Link>\n')
 
 		f.write('    <Lib>\n')
 		f.write('    </Lib>\n')
+
+		PreBuildEventCommand = getPreBuildEventCommand(make, cfg)
+		PreBuildEventMessage = getPreBuildEventMessage(make, cfg)
+		if (PreBuildEventCommand != None):
+			f.write('    <PreBuildEvent>\n')
+			f.write('      <Command>' + PreBuildEventCommand + '</Command>\n')
+			if (PreBuildEventMessage != None):
+				f.write('      <Message>' + PreBuildEventMessage + '</Message>\n')
+			f.write('    </PreBuildEvent>\n')
+
+
+		PreLinkEventCommand = getPreLinkEventCommand(make, cfg)
+		PreLinkEventMessage = getPreLinkEventMessage(make, cfg)
+		if (PreLinkEventCommand != None):
+			f.write('    <PreLinkEvent>\n')
+			f.write('      <Command>' + PreLinkEventCommand + '</Command>\n')
+			if (PreLinkEventMessage != None):
+				f.write('      <Message>' + PreLinkEventMessage + '</Message>\n')
+			f.write('    </PreLinkEvent>\n')
+
+		PostBuildEventCommand = getPostBuildEventCommand(make, cfg)
+		PostBuildEventMessage = getPostBuildEventMessage(make, cfg)
+		if (PostBuildEventCommand != None):
+			f.write('    <PostBuildEvent>\n')
+			f.write('      <Command>' + PostBuildEventCommand + '</Command>\n')
+			if (PostBuildEventMessage != None):
+				f.write('      <Message>' + PostBuildEventMessage + '</Message>\n')
+			f.write('    </PostBuildEvent>\n')
 
 		f.write('  </ItemDefinitionGroup>\n')
 
@@ -386,7 +466,7 @@ def outputProject(make, project, projects, output_path):
 			project['files'].extend(cfg['files'])
 
 	project['files'] = list(set(project['files']))
-	project['files'] = [{'name': file, 'skip_cfg': []} for file in project['files']]
+	project['files'] = [{'name': file, 'skip_cfg': [], 'bigobj_cfg': [], 'nopch_cfg': []} for file in project['files']]
 
 	if len(project['files']) == 0:
 		api.warning("No files added to project '" + project['name'] + "' in context " + str(project_ctx), 1)
@@ -416,6 +496,34 @@ def outputProject(make, project, projects, output_path):
 		create_pch = make.get('create_pch', cfg['ctx'])
 		cfg['create_pch'] = api.getRelativePath(create_pch[0], output_path, 'windows') if create_pch != None else ''
 
+	# big obj per file
+	for cfg in project['configurations']:
+		nopchs = make.get('big_obj', cfg['ctx'])
+		if nopchs:
+			for nopch in nopchs:
+				file = getProjectFile(getSolutionFileName(nopch, output_path))
+				if file:
+					file['bigobj_cfg'].append(cfg)
+
+	for file in project['files']:
+		for cfg in project['configurations']:
+			if file['name'] not in cfg['files']:
+				file['bigobj_cfg'].append(cfg)
+	
+	# no pch per file
+	for cfg in project['configurations']:
+		nopchs = make.get('no_pch', cfg['ctx'])
+		if nopchs:
+			for nopch in nopchs:
+				file = getProjectFile(getSolutionFileName(nopch, output_path))
+				if file:
+					file['nopch_cfg'].append(cfg)
+
+	for file in project['files']:
+		for cfg in project['configurations']:
+			if file['name'] not in cfg['files']:
+				file['nopch_cfg'].append(cfg)
+
 	# distribute over file categories	
 	distributeProjectFiles(make, project, output_path)
 
@@ -433,6 +541,8 @@ def outputProject(make, project, projects, output_path):
 		openCompileFileClDirective(f, project, file, output_path)
 		outputCompileFileClDirective(f, make, project, file, output_path)
 		outputPCHDirective(f, project, file)
+		outputBigObjDirective(f, project, file)
+		outputNoPchDirective(f, file)
 		outputExcludeFileFromBuildDirective(f, file)
 		closeCompileFileClDirective(f, project, file, output_path)
 	f.write('  </ItemGroup>\n')
@@ -449,6 +559,8 @@ def outputProject(make, project, projects, output_path):
 		openCustomFileClDirective(f, project, file, output_path)
 		outputCustomFileClDirective(f, make, project, file, output_path)
 		outputPCHDirective(f, project, file)
+		outputBigObjDirective(f, project, file)
+		outputNoPchDirective(f, file)
 		outputExcludeFileFromBuildDirective(f, file)
 		closeCustomFileClDirective(f, project, file, output_path)
 	f.write('  </ItemGroup>\n')
