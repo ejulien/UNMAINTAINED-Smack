@@ -43,7 +43,8 @@ class context:
 
 	# compare two context
 	def compare(self, ctx):
-		key_weights = ['workspace', 'group', 'project', 'build', 'target', 'arch']
+		# key_weights = ['workspace', 'group', 'project', 'build', 'target', 'arch']
+		key_weights = ['arch', 'target', 'build', 'project', 'group', 'workspace']
 
 		score = 0
 		for key in self.ctx:
