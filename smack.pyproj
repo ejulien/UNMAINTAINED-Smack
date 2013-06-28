@@ -5,9 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>b1abed0f-da9f-43f1-af5f-205e4781eff3</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>
-    </StartupFile>
-    <WorkingDirectory>.</WorkingDirectory>
+    <StartupFile>D:\gs\build\smack\build.py</StartupFile>
+    <WorkingDirectory>D:\gs\build\smack</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>kismake</Name>
     <RootNamespace>kismake</RootNamespace>

@@ -40,7 +40,7 @@ km.set('cflags', 'use-utf8')    # current context is -/-/-/-/-/-,
                                 # target and arch will use utf8
 km.setWorkspace('ws')
 km.setBuild('Debug')
-km.set('cflags', ['O0', debug]) # current context is ws/-/-/Debug/-/- all
+km.set('cflags', [debug])       # current context is ws/-/-/Debug/-/- all
                                 # projects in the ws workspace in Debug
                                 # build will use O0 and debug no matter
                                 # the target architecture
@@ -80,7 +80,6 @@ The following keys should ideally be supported by all generators.
 
     'debug'             Indicates a debug build.
 
-    'O0' to 'O3'        Level of optimization (3 max. optimization)
     'W0' to 'W4'        Warning level
 
     'maxsize'           Optimize for size.

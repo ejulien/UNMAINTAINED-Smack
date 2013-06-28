@@ -8,6 +8,17 @@ resource_filter = ['*.rc']
 files_common_prefix = ''
 
 #------------------------------------------------------------------------------
+# generator configuration flags
+output_master_solution = True
+
+output_per_project_solution = False
+per_project_solution_prefix = 'project_'
+
+output_per_group_solution = False
+per_group_solution_prefix = 'group_'
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 def getProject(projects, name):
 	for prj in projects:
 		if prj['name'] == name: return prj
@@ -575,7 +586,7 @@ def outputProject(make, project, projects, output_path):
 		if cfg['links'] != None:
 			cfg['cfg_links'] = [link for link in cfg['links'] if link not in common_links]
 
-	if len(common_links) > 0:
+	if common_links and len(common_links) > 0:
 		f.write('  <ItemGroup>\n')
 		for link in common_links:
 			prj = getProject(projects, link)
@@ -616,6 +627,7 @@ def generateProject(make, ctx, toolchains, output_path):
 	# begin generation
 	project = {}
 	project['ctx'] = copy.deepcopy(ctx)
+	project['group'] = ctx['group']
 	project['name'] = ctx['project']
 	project['guid'] = str(uuid.uuid4()).upper()
 
@@ -672,11 +684,11 @@ def outputSolutionLevelProjectDependencies(f, project, projects):
 			f.write('		{' + link_prj['guid'] + '} = {' + link_prj['guid'] + '}\n')
 		f.write('	EndProjectSection\n')
 
-def outputSolution(make, ctx, projects, output_path):
+def outputSolution(make, ctx, projects, output_path, output_name = None):
 	solution = {}
 	solution['guid'] = str(uuid.uuid4()).upper()
 
-	f = open(output_path + '/' + ctx['workspace'] + '.sln', 'w')
+	f = open(output_path + '/' + (output_name if output_name else ctx['workspace']) + '.sln', 'w')
 
 	f.write('Microsoft Visual Studio Solution File, Format Version 11.00\n')
 	f.write('# Visual Studio 2010\n')
@@ -694,6 +706,9 @@ def outputSolution(make, ctx, projects, output_path):
 	root_guid = '2150E333-8FDC-42A3-9474-1A3956D46DE8'	# solution folder guid
 	group_projects = []
 	for group in groups:
+		if len([p for p in projects if p['group'] == group]) == 0:
+			continue # make sure we have at least one project in this group before outputing it
+
 		grp = {'name': group, 'root_guid': root_guid, 'guid': str(uuid.uuid4()).upper()}
 		f.write('Project("{' + grp['root_guid'] + '}") = "' + group + '", "' + group + '", "{' + grp['guid'] + '}"\n')
 		f.write('EndProject\n')
@@ -729,7 +744,6 @@ def outputSolution(make, ctx, projects, output_path):
 						f.write('		{' + prj['guid'] + '} = {' + group['guid'] + '}\n')
 		f.write('	EndGlobalSection\n')
 
-	# done
 	f.write('EndGlobal\n')
 	return solution
 #------------------------------------------------------------------------------
@@ -791,6 +805,34 @@ def outputSolutionFilters(make, ctx, projects, output_path):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
+def collectVSProjectDependencies(project, vs_projects):
+	if not project['all_link']:
+		return []
+	links = []
+	for name in project['all_link']:
+		links.extend([l for l in vs_projects if l['name'] == name])
+	return links
+
+def outputPerProjectSolutions(make, ctx, vs_projects, output_path):
+	for project in vs_projects:
+		sub_vs_projects = collectVSProjectDependencies(project, vs_projects)
+		sub_vs_projects.append(project)
+		outputSolution(make, ctx, sub_vs_projects, output_path, per_project_solution_prefix + project['name'])
+
+def outputPerGroupSolutions(make, ctx, vs_projects, groups, output_path):
+	for group in groups:
+		all_deps = []
+		for project in vs_projects:
+			if project['group'] == group:
+				all_deps.append(project)
+				all_deps.extend(collectVSProjectDependencies(project, vs_projects))
+
+		# remove duplicates and output
+		sub_vs_projects = [i for n, i in enumerate(all_deps) if i not in all_deps[n + 1:]]
+		outputSolution(make, ctx, sub_vs_projects, output_path, per_group_solution_prefix + group)
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 def generateSolution(make, ctx, toolchains, output_path):
 	api.log('VS2010 solution: ' + ctx['workspace'], 0)
 	api.log('Target directory: ' + output_path, 1)
@@ -812,11 +854,16 @@ def generateSolution(make, ctx, toolchains, output_path):
 	for project in vs_projects:
 		outputProject(make, project, vs_projects, output_path)
 
-	# output solution
-	outputSolution(make, ctx, vs_projects, output_path)
-
-	# output solution filters
+	# output solution filters (saved as one file per project)
 	outputSolutionFilters(make, ctx, vs_projects, output_path)
+
+	# output solutions
+	if output_master_solution:
+		outputSolution(make, ctx, vs_projects, output_path)
+	if output_per_project_solution:
+		outputPerProjectSolutions(make, ctx, vs_projects, output_path)
+	if output_per_group_solution:
+		outputPerGroupSolutions(make, ctx, vs_projects, groups, output_path)
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
