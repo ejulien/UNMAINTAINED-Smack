@@ -30,6 +30,20 @@ def outputGeneralProjectProperty(base, f, make, project, cfg):
 		f.write('    <UseIntelMKL>Cluster</UseIntelMKL>\n')
 
 
+
+def getInterprocedureOptimLinkOptions(make, cfg):
+	options = make.getBestMatch('link_interprocedural_optimization', cfg['ctx'])
+	return options
+
+def outputAdditionalLinkTags(base, f, make, cfg):
+	base(f, make, cfg)
+	InterproceduralOptimization = getInterprocedureOptimLinkOptions(make, cfg)
+	if InterproceduralOptimization != None:
+		f.write('      <InterproceduralOptimization>' + InterproceduralOptimization + '</InterproceduralOptimization>\n')
+
+
+
 def install():
 	vs2010.getPlatformToolset = api.hook(vs2010.getPlatformToolset, getPlatformToolset)
 	vs2010.outputGeneralProjectProperty = api.hook(vs2010.outputGeneralProjectProperty, outputGeneralProjectProperty)
+	vs2010.outputAdditionalLinkTags = api.hook(vs2010.outputAdditionalLinkTags, outputAdditionalLinkTags)
