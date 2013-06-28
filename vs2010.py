@@ -238,6 +238,9 @@ def outputPrecompiledHeaderTags(f, make, cfg):
 def outputProjectExtensionTag(f, make, project):
 	return
 
+def outputAdditionalLinkTags(f, make, cfg):
+	return
+
 def getFileCategory(project, file, output_path):
 	ext = os.path.splitext(file['name'])[1].lower()
 	if ext in ['.cpp', '.c', '.cc', '.cxx']:
@@ -432,6 +435,8 @@ def outputProject(make, project, projects, output_path):
 		additionalLinkOptions = getAdditionalLinkOptions(make, cfg)
 		if additionalLinkOptions != None:
 			f.write('      <AdditionalOptions>' + additionalLinkOptions + ' %(AdditionalOptions)</AdditionalOptions>\n')
+
+		outputAdditionalLinkTags(f, make, cfg)
 
 		f.write('    </Link>\n')
 
