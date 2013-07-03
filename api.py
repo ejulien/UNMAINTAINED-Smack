@@ -121,7 +121,10 @@ def getRelativePath(path, ref_path, convention = 'unix'):
 		path = os.path.abspath(path)
 	if os.path.isabs(ref_path) == False:
 		ref_path = os.path.abspath(ref_path)
-	return normPathForOs(os.path.relpath(path, ref_path), convention)
+	try:
+		return normPathForOs(os.path.relpath(path, ref_path), convention)
+	except:
+		return path
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
