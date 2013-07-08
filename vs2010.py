@@ -154,13 +154,21 @@ def useDebugLibrairies(cflags):
 
 def getUnicode(cflags):
 	return 'MultiByte' if 'use-utf8' in cflags else 'Unicode'
+
 def getFloatingPointModel(cflags):
 	return api.translate(cflags, {'fp-fast': 'Fast', 'fp-strict': 'Strict'}, 'Precise')
 
 def getUseExceptions(cflags):
 	return 'Sync' if 'use-exceptions' in cflags else 'false'
+
 def getUseRTTI(cflags):
 	return 'true' if 'use-rtti' in cflags else 'false'
+
+def getMultiProcessorCompilation(cflags):
+	return 'true' if 'use-multi-processor-compilation' in cflags else 'false'
+
+def getMinimalRebuild(cflags):
+	return 'true' if 'use-minimal-rebuild' in cflags else 'false'
 
 def getIntermediatePath(make, cfg):
 	ctx = cfg['ctx']
@@ -402,9 +410,14 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
+		
 		if 'omit-frame-pointers' in cflags:
 			f.write('      <OmitFramePointers>true</OmitFramePointers>\n')
+
 		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
+
+		f.write('      <MultiProcessorCompilation>' + getMultiProcessorCompilation(cflags) + '</MultiProcessorCompilation>\n')
+		f.write('      <MinimalRebuild>' + getMinimalRebuild(cflags) + '</MinimalRebuild>\n')
 
 		additionalClOptions = getAdditionalClOptions(make, cfg)
 		if additionalClOptions != None:
