@@ -105,6 +105,9 @@ class context:
 class make:
 	def __init__(self):
 		self.config = {}
+		self.cache = {}
+		self.cache_hit = 0
+		self.cache_query = 0
 		self.ctx = context()
 
 	def setWorkspace(self, name = None):
@@ -231,12 +234,23 @@ class make:
 			exp_output = not exp_output
 		return (v == f) == exp_output
 
+	def logCacheStats(self):
+		api.Print('cache_query: %d - cache_hit: %d' % (self.cache_query, self.cache_hit))
+
 	# return a key value for a given context (inherits unspecified values)
 	def get(self, key, get_context = None):
 		if get_context == None:
 			get_context = self.ctx
 
+		cache_key = key + str(get_context)
+
+		self.cache_query += 1
+		if cache_key in self.cache:
+			self.cache_hit += 1
+			return self.cache[cache_key]
+
 		if key not in self.config:
+			self.cache[cache_key] = None
 			return None
 
 		config_key_values = self.config[key]
@@ -255,6 +269,7 @@ class make:
 			if mismatch == False:
 				rval = api.appendToList(rval, value['value'])
 
+		self.cache[cache_key] = rval
 		return rval
 
 	def getDefault(self, key, get_context, default):
