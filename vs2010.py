@@ -109,6 +109,18 @@ def getAdditionalLinkOptions(make, cfg):
 	options = make.getBestMatch('additional_link_options', cfg['ctx'])
 	return options
 
+def getUACExecutionLevel(make, cfg):
+	options = make.getBestMatch('UACExecutionLevel', cfg['ctx'])
+	return options
+
+def getLibTargetMachine(make, cfg):
+	options = make.getBestMatch('lib_target', cfg['ctx'])
+	return options
+
+def getAdditionalLibDependencies(make, cfg):
+	options = make.getBestMatch('additional_lib_Dependencies', cfg['ctx'])
+	return options
+
 def getDefines(make, cfg):
 	list = ''
 	defines = make.getAcrossDependencies(cfg['deps'], 'define', cfg['ctx'])
@@ -154,13 +166,21 @@ def useDebugLibrairies(cflags):
 
 def getUnicode(cflags):
 	return 'MultiByte' if 'use-utf8' in cflags else 'Unicode'
+
 def getFloatingPointModel(cflags):
 	return api.translate(cflags, {'fp-fast': 'Fast', 'fp-strict': 'Strict'}, 'Precise')
 
 def getUseExceptions(cflags):
 	return 'Sync' if 'use-exceptions' in cflags else 'false'
+
 def getUseRTTI(cflags):
 	return 'true' if 'use-rtti' in cflags else 'false'
+
+def getMultiProcessorCompilation(cflags):
+	return 'true' if 'use-multi-processor-compilation' in cflags else 'false'
+
+def getMinimalRebuild(cflags):
+	return 'true' if 'use-minimal-rebuild' in cflags else 'false'
 
 def getIntermediatePath(make, cfg):
 	ctx = cfg['ctx']
@@ -390,20 +410,27 @@ def outputProject(make, project, projects, output_path):
 		# compiler
 		cflags = cfg['cflags']
 
+		outDir = '$(OutDir)' if 'debug' in cfg['cflags'] else '$(IntDir)'
+
 		f.write('    <ClCompile>\n')
 		f.write('      <PrecompiledHeader>NotUsing</PrecompiledHeader>\n')
 		f.write('      <WarningLevel>' + getWarningLevel(cflags) + '</WarningLevel>\n')
 		f.write('      <PreprocessorDefinitions>' + getDefines(make, cfg) + '</PreprocessorDefinitions>\n')
 		f.write('      <AdditionalIncludeDirectories>' + getAdditionalIncludes(make, cfg, output_path) + '</AdditionalIncludeDirectories>\n')
 		f.write('      <DebugInformationFormat>' + getDebugInformation(cflags) + '</DebugInformationFormat>\n')
-		f.write('      <ProgramDataBaseFileName>$(OutDir)' + getPDBName(project['name'], suffix) + '.pdb</ProgramDataBaseFileName>\n')
+		f.write('      <ProgramDataBaseFileName>'+ outDir + getPDBName(project['name'], suffix) + '.pdb</ProgramDataBaseFileName>\n')
 		f.write('      <Optimization>' + getOptimization(cflags) + '</Optimization>\n')
 		f.write('      <ExceptionHandling>' + getUseExceptions(cflags) + '</ExceptionHandling>\n')
 		f.write('      <RuntimeTypeInfo>' + getUseRTTI(cflags) + '</RuntimeTypeInfo>\n')
 		f.write('      <FloatingPointModel>' + getFloatingPointModel(cflags) + '</FloatingPointModel>\n')
+		
 		if 'omit-frame-pointers' in cflags:
 			f.write('      <OmitFramePointers>true</OmitFramePointers>\n')
+
 		f.write('      <RuntimeLibrary>' + getRuntimeLibrary(make, cfg) + '</RuntimeLibrary>\n')
+
+		f.write('      <MultiProcessorCompilation>' + getMultiProcessorCompilation(cflags) + '</MultiProcessorCompilation>\n')
+		f.write('      <MinimalRebuild>' + getMinimalRebuild(cflags) + '</MinimalRebuild>\n')
 
 		additionalClOptions = getAdditionalClOptions(make, cfg)
 		if additionalClOptions != None:
@@ -435,11 +462,24 @@ def outputProject(make, project, projects, output_path):
 		if additionalLinkOptions != None:
 			f.write('      <AdditionalOptions>' + additionalLinkOptions + ' %(AdditionalOptions)</AdditionalOptions>\n')
 
+		UACExecutionLevel = getUACExecutionLevel(make, cfg)
+		if UACExecutionLevel != None:
+			f.write('      <UACExecutionLevel>' + UACExecutionLevel + '</UACExecutionLevel>\n')
+
 		outputAdditionalLinkTags(f, make, cfg)
 
 		f.write('    </Link>\n')
 
 		f.write('    <Lib>\n')
+
+		additionalLibDependencies = getAdditionalLibDependencies(make, cfg)
+		if additionalLibDependencies != None:
+			f.write('      <AdditionalDependencies>' + additionalLibDependencies + '</AdditionalDependencies>\n')
+
+		LibTargetMachine = getLibTargetMachine(make, cfg)
+		if LibTargetMachine != None:
+			f.write('      <TargetMachine>' + LibTargetMachine + '</TargetMachine>\n')
+
 		f.write('    </Lib>\n')
 
 		PreBuildEventCommand = getPreBuildEventCommand(make, cfg)
@@ -692,7 +732,11 @@ def outputSolution(make, ctx, projects, output_path, output_name = None):
 	solution = {}
 	solution['guid'] = str(uuid.uuid4()).upper()
 
-	f = open(output_path + '/' + (output_name if output_name else ctx['workspace']) + '.sln', 'w')
+
+	fullPath = output_path + '/' + (output_name if output_name else ctx['workspace']) + '.sln'
+	api.log('output solution: ' + fullPath)
+
+	f = open(fullPath, 'w')
 
 	f.write('Microsoft Visual Studio Solution File, Format Version 11.00\n')
 	f.write('# Visual Studio 2010\n')
@@ -863,11 +907,18 @@ def generateSolution(make, ctx, toolchains, output_path):
 
 	# output solutions
 	if output_master_solution:
+		api.log('Output Master Solution : Start...')
 		outputSolution(make, ctx, vs_projects, output_path)
+		api.log('Output Master Solution : Stop...')
 	if output_per_project_solution:
+		api.log('Output per project solution : Start...')
 		outputPerProjectSolutions(make, ctx, vs_projects, output_path)
+		api.log('Output per project solution : Stop...')
 	if output_per_group_solution:
+		api.log('Output per group solution : Start...')
 		outputPerGroupSolutions(make, ctx, vs_projects, groups, output_path)
+		api.log('Output per group solution : Stop...')
+
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
