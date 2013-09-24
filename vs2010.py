@@ -189,7 +189,7 @@ def getConfigurationType(make, cfg):
 	return api.translate(cfg['type'], {'staticlib': 'StaticLibrary', 'dynamiclib': 'DynamicLibrary', 'executable': 'Application'}, 'StaticLibrary')
 
 def getPlatformToolset(make, ctx):
-	return make.getBestMatch('platform_toolset', ctx)
+	return make.get('platform_toolset', ctx)
 
 def outputGeneralProjectProperty(f, make, project, cfg):
 	cflags = cfg['cflags']
@@ -198,9 +198,8 @@ def outputGeneralProjectProperty(f, make, project, cfg):
 	f.write('    <CharacterSet>' + getUnicode(cflags) + '</CharacterSet>\n')
 
 	toolset = getPlatformToolset(make, cfg['ctx'])
-
 	if toolset:
-		f.write('    <PlatformToolset>' + toolset + '</PlatformToolset>\n')
+		f.write('    <PlatformToolset>' + toolset[0] + '</PlatformToolset>\n')
 
 def getSolutionFileName(file, output_path):
 	return api.getRelativePath(file, output_path, 'windows')

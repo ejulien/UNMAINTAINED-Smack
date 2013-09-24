@@ -4,7 +4,7 @@
 import api, vs2010, os, re
 
 qt_filter = ['*.ui', '*.qrc']
-qt_modules = {'core': 'QtCore', 'gui': 'QtGui', 'opengl': 'QtOpenGL', 'script': 'QtScript', 'webkit': 'QtWebKit', 'network': 'QtNetwork'}
+qt_modules = {'core': 'QtCore', 'gui': 'QtGui', 'opengl': 'QtOpenGL', 'script': 'QtScript', 'qml': 'QtQml', 'webkit': ['QtWebKit', 'QtWebKitWidgets'], 'network': 'QtNetwork', 'widgets': 'QtWidgets'}
 qobject_re = re.compile(r'\bQ_OBJECT\b')
 
 #------------------------------------------------------------------------------
@@ -29,7 +29,13 @@ def getAdditionalIncludes(base, make, cfg, output_path):
 	mods = make.get('qt_modules', cfg['ctx'])
 	if mods != None:
 		for mod in mods:
-			qt_list += '$(QTDIR)\\include\\' + qt_modules[mod] + ';'
+			qt_mods = qt_modules[mod]
+			if type(qt_mods) != type([]):
+				qt_mods = [qt_mods]
+
+			for qt_mod in qt_mods:
+				qt_list += '$(QTDIR)\\include\\' + qt_mod + ';'
+
 	return qt_list + list
 
 def getAdditionalDependencies(base, make, cfg, projects):
@@ -39,13 +45,18 @@ def getAdditionalDependencies(base, make, cfg, projects):
 		return list
 
 	is_debug = make.testKeyForValue('cflags', 'debug', cfg['ctx'])
-	lib_suffix = 'd4.lib' if is_debug else '4.lib'
+	lib_suffix = 'd.lib' if is_debug else '.lib'
 
 	qt_list = 'qtmaind.lib;' if is_debug else 'qtmain.lib;'
 	mods = make.get('qt_modules', cfg['ctx'])
 	if mods != None:
 		for mod in mods:
-			qt_list += qt_modules[mod] + lib_suffix + ';'
+			qt_mods = qt_modules[mod]
+			if type(qt_mods) != type([]):
+				qt_mods = [qt_mods]
+
+			for qt_mod in qt_mods:
+				qt_list += 'Qt5' + qt_mod[2:] + lib_suffix + ';'
 	return qt_list + list
 
 def getAdditionalLibraryDirectories(base, make, cfg, output_path):
