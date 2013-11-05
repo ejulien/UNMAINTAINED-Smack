@@ -16,6 +16,12 @@ per_project_solution_prefix = 'project_'
 
 output_per_group_solution = False
 per_group_solution_prefix = 'group_'
+
+output_per_condition_solution		= False
+per_condition_solution_key			= None
+per_condition_solution_and_searchString = None
+per_condition_solution_or_searchString = None
+per_condition_solution_prefix = 'cond_'
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -209,7 +215,7 @@ def getConfigurationType(make, cfg):
 	return api.translate(cfg['type'], {'staticlib': 'StaticLibrary', 'dynamiclib': 'DynamicLibrary', 'executable': 'Application'}, 'StaticLibrary')
 
 def getPlatformToolset(make, ctx):
-	return make.get('platform_toolset', ctx)
+	return make.getBestMatch('platform_toolset', ctx)
 
 def outputGeneralProjectProperty(f, make, project, cfg):
 	cflags = cfg['cflags']
@@ -219,7 +225,7 @@ def outputGeneralProjectProperty(f, make, project, cfg):
 
 	toolset = getPlatformToolset(make, cfg['ctx'])
 	if toolset:
-		f.write('    <PlatformToolset>' + toolset[0] + '</PlatformToolset>\n')
+		f.write('    <PlatformToolset>' + toolset + '</PlatformToolset>\n')
 
 def getSolutionFileName(file, output_path):
 	return api.getRelativePath(file, output_path, 'windows')
@@ -878,6 +884,37 @@ def outputPerGroupSolutions(make, ctx, vs_projects, groups, output_path):
 		# remove duplicates and output
 		sub_vs_projects = [i for n, i in enumerate(all_deps) if i not in all_deps[n + 1:]]
 		outputSolution(make, ctx, sub_vs_projects, output_path, per_group_solution_prefix + group)
+
+def outputPerConditionSolutions(make, ctx, vs_projects, key, output_path):
+	all_deps = []
+	for project in vs_projects:
+		expected = len(per_condition_solution_and_searchString)
+		count = 0
+		for searchString in per_condition_solution_and_searchString:
+			if searchString in project[key]:
+				count = count + 1
+
+		if count == expected:
+			count = 0
+			for str in per_condition_solution_or_searchString:
+				if str in project[key]:
+					count = count + 1
+
+			if count > 0:
+				print(project[key])
+				all_deps.append(project)
+				all_deps.extend(collectVSProjectDependencies(project, vs_projects))
+
+	# remove duplicates and output
+	sub_vs_projects = [i for n, i in enumerate(all_deps) if i not in all_deps[n + 1:]]
+
+	str = ''
+	for searchString in per_condition_solution_and_searchString:
+		if str != '':
+			str = str + '_'
+		str = str + searchString
+
+	outputSolution(make, ctx, sub_vs_projects, output_path, per_condition_solution_prefix + str)
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -918,6 +955,10 @@ def generateSolution(make, ctx, toolchains, output_path):
 		api.log('Output per group solution : Start...')
 		outputPerGroupSolutions(make, ctx, vs_projects, groups, output_path)
 		api.log('Output per group solution : Stop...')
+	if output_per_condition_solution and per_condition_solution_key:
+		api.log('Output per name solution : Start...')
+		outputPerConditionSolutions(make, ctx, vs_projects, per_condition_solution_key, output_path)
+		api.log('Output per name solution : Stop...')
 
 #------------------------------------------------------------------------------
 
