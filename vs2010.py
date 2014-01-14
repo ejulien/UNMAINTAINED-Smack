@@ -448,7 +448,7 @@ def outputProject(make, project, projects, output_path):
 				f.write('      <StructMemberAlignment>' + str(align_dict[key]) + 'Bytes</StructMemberAlignment>\n')
 				break
 
-		if 'use-sse2' in cflags:
+		if 'x64' not in ctx['arch'] and 'use-sse2' in cflags:
 			f.write('      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>\n')
 
 		outputPrecompiledHeaderTags(f, make, cfg)
