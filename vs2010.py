@@ -22,7 +22,6 @@ per_condition_solution_key			= None
 per_condition_solution_and_searchString = None
 per_condition_solution_or_searchString = None
 per_condition_solution_prefix = 'cond_'
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def getProject(projects, name):
@@ -39,7 +38,6 @@ def platformFromTargetArchitecture(target, arch):
 		if		arch == 'x86': return 'Win32'
 		elif	arch == 'x64': return 'x64'
 	return None
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def getBinaryName(name, type, target):
@@ -60,7 +58,6 @@ def getBinaryExt(type, target):
 		'executable': '.exe'
 	}
 	return types[type] if type in types else '.lib'
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def getCondition(cfg):
@@ -164,7 +161,7 @@ def getAdditionalLibraryDirectories(make, cfg, output_path):
 	return list + '%(AdditionalLibraryDirectories)'
 
 def getDebugInformation(cflags):
-	return 'EditAndContinue' if 'debug' in cflags else 'ProgramDatabase'
+	return 'EditAndContinue' if ('debug' in cflags or 'debug-info' in cflags) else 'ProgramDatabase'
 def getOptimization(cflags):
 	return api.translate(cflags, {'maxspeed': 'MaxSpeed', 'maxsize': 'MaxSize', 'optimize': 'Full'}, 'Disabled')
 def useDebugLibrairies(cflags):
@@ -317,7 +314,6 @@ def outputExcludeFileFromBuildDirective(f, file):
 	if 'skip_cfg' in file:
 		for cfg in file['skip_cfg']:
 			f.write('      <ExcludedFromBuild ' + getCondition(cfg) + '>true</ExcludedFromBuild>\n')
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def outputProject(make, project, projects, output_path):
@@ -458,7 +454,7 @@ def outputProject(make, project, projects, output_path):
 		f.write('      <SubSystem>' + getSubSystem(make, cfg) + '</SubSystem>\n')
 		f.write('      <AdditionalDependencies>' + getAdditionalDependencies(make, cfg, projects) + '</AdditionalDependencies>\n')
 		f.write('      <AdditionalLibraryDirectories>' + getAdditionalLibraryDirectories(make, cfg, output_path) +'</AdditionalLibraryDirectories>\n')
-		f.write('      <GenerateDebugInformation>' + ('True' if ('debug' in cfg['cflags']) else 'False') + '</GenerateDebugInformation>\n')
+		f.write('      <GenerateDebugInformation>' + ('True' if ('debug' in cfg['cflags'] or 'debug-info' in cfg['cflags']) else 'False') + '</GenerateDebugInformation>\n')
 
 		ModuleDefFile = getModuleDefinitionFile(make, cfg);
 		if (ModuleDefFile != None):
@@ -668,7 +664,6 @@ def outputProject(make, project, projects, output_path):
 
 	# project done, next!
 	f.write('</Project>\n')
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def generateProject(make, ctx, toolchains, output_path):
@@ -710,7 +705,6 @@ def generateProject(make, ctx, toolchains, output_path):
 				project['configurations'].append(cfg)
 
 	return project
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def getSolutionPlatformsFromProjects(projects):
@@ -800,7 +794,6 @@ def outputSolution(make, ctx, projects, output_path, output_name = None):
 
 	f.write('EndGlobal\n')
 	return solution
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def outputSolutionFilters(make, ctx, projects, output_path):
@@ -856,7 +849,6 @@ def outputSolutionFilters(make, ctx, projects, output_path):
 		outputItemGroup(f, project['resource_files'], 'ResourceCompile')
 		outputItemGroup(f, project['custom_files'], 'CustomBuild')
 		f.write('</Project>\n')
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def collectVSProjectDependencies(project, vs_projects):
@@ -915,7 +907,6 @@ def outputPerConditionSolutions(make, ctx, vs_projects, key, output_path):
 		str = str + searchString
 
 	outputSolution(make, ctx, sub_vs_projects, output_path, per_condition_solution_prefix + str)
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def generateSolution(make, ctx, toolchains, output_path):
@@ -961,8 +952,6 @@ def generateSolution(make, ctx, toolchains, output_path):
 		api.log('Output per name solution : Stop...')
 
 #------------------------------------------------------------------------------
-
-#------------------------------------------------------------------------------
 def generate(make, toolchains, output_path):
 	# retrieve all workspaces
 	workspaces = make.getConfigurationKeyValues('workspace')
@@ -971,4 +960,3 @@ def generate(make, toolchains, output_path):
 	for workspace in workspaces:
 		ctx = smack.context().clone({'workspace': workspace})
 		generateSolution(make, ctx, toolchains, output_path)
-#------------------------------------------------------------------------------

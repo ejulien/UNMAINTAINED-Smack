@@ -211,7 +211,7 @@ class make:
 		for value in config_key_values:
 			score = get_context.compare(value['context'])
 
-			if score > best_score or not rval:
+			if score > best_score or (not rval and score >= 0): # EJ make sure we do not retrieve a false match when rval is None
 				best_score = score
 				rval = value['value']
 

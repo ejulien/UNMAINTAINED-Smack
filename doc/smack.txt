@@ -61,6 +61,7 @@ The following keys should ideally be supported by all generators.
 * skip_files    -   Do not build specific files.
 * output_path   -   Output path for the generated makefile/solution/project.
 * bin_path      -   Output path for the generated binaries.
+* bin_ext       -   Extension for the generated binaries.
 * obj_path      -   Output path for the intermediate build files.
 * bin_suffix    -   Suffix to be appended to the generated binaries name.
 * include_path  -   Additional include path.
@@ -79,7 +80,7 @@ The following keys should ideally be supported by all generators.
 * cflags        -   Compiler flags.
 
     'debug'             Indicates a debug build.
-
+	'debug-info'		Generate debug information (implicitly set by 'debug')
     'W0' to 'W4'        Warning level
 
     'maxsize'           Optimize for size.
