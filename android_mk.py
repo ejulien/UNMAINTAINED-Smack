@@ -9,13 +9,11 @@ def getProject(name, projects):
 		if project['name'] == name:
 			return project
 	return None
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def outputHeader(f):
 	f.write('# smack NDK-BUILD makefile generator\n')
 	f.write('# Emmanuel Julien 2013\n\n')
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def filterCFlags(out, cflags, dict):
@@ -41,7 +39,6 @@ def convertCFlags(cflags):
 	if 'maxsize' in cflags: out.append('-Os')
 	if 'maxspeed' in cflags: out.append('-Ofast')
 	return out
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def outputProject(f, make, project, projects, output_path):
@@ -130,7 +127,6 @@ def outputProject(f, make, project, projects, output_path):
 	# output project type
 	f.write('include $(' + api.translate(project['type'], {'staticlib': 'BUILD_STATIC_LIBRARY', 'dynamiclib': 'BUILD_SHARED_LIBRARY', 'executable': 'BUILD_EXECUTABLE'}, None) + ')\n')
 	f.write('\n')
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def generateProject(make, ctx, output_path):
@@ -140,12 +136,10 @@ def generateProject(make, ctx, output_path):
 	project['type'] = make.getBestMatch('type', ctx)
 	project['pflags'] = make.get('pflags', ctx)
 	return project
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def getArchABI(arch):
 	return api.translate(arch, {'ARMv7': 'armeabi-v7a', 'ARMv5': 'armeabi', 'x86': 'x86', 'Mips': 'mips', 'All': 'all'}, None)
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def outputApplicationMk(make, ctx, toolchains, mk_projects, output_path):
@@ -242,7 +236,6 @@ def outputApplicationMk(make, ctx, toolchains, mk_projects, output_path):
 
 				f.write('\n  endif\n')
 				f.write('endif\n\n')
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def generateMakefile(make, ctx, toolchains, output_path):
@@ -275,7 +268,6 @@ def generateMakefile(make, ctx, toolchains, output_path):
 
 	# write Application makefile
 	outputApplicationMk(make, ctx, toolchains, mk_projects, output_path)
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 def generate(make, toolchains, output_path):
@@ -286,4 +278,4 @@ def generate(make, toolchains, output_path):
 	for workspace in workspaces:
 		ctx = smack.context().clone({'workspace': workspace, 'target': 'android'})
 		generateMakefile(make, ctx, toolchains, output_path)
-#------------------------------------------------------------------------------
+

@@ -11,36 +11,42 @@ def getTargetBuildEnv(base, target, arch):
 	if target == 'emscripten' and arch == 'Default':
 		return {'CC': ['emcc'], 'CXX': ['emcc'], 'CFLAGS': [''], 'LDFLAGS': ['']}
 	return base(target, arch)
-#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-def outputExecutableBuildDirective(base, f, make, prj, output_path):
-	f.write('\t$(CXX) $(GLOBAL_LDFLAGS) -o ' + prj['obj'] + ' ')
-	gnu_make.outputProjectCompilationUnits(f, make, prj)
+def outputExecutableBuildDirective(base, f, make, ctx, prj, output_path):
+	if ctx['target'] == 'emscripten':
+		f.write('\t$(CXX) $(GLOBAL_LDFLAGS) -o ' + prj['obj'] + ' ')
+		gnu_make.outputProjectCompilationUnits(f, make, ctx, prj)
 
-	# linkage
-	for plink in prj['plinks']:
-		f.write(plink['obj'] + ' ')
-	for llink in prj['llinks']:
-		f.write('-l' + llink + ' ')
-
-def outputStaticLibBuildDirective(base, f, make, prj, output_path):
-	f.write('\t$(CXX) -o ' + prj['obj'] + ' ')
-	gnu_make.outputProjectCompilationUnits(f, make, prj)
-#------------------------------------------------------------------------------
-
-#------------------------------------------------------------------------------
-def outputProjectBuildDirective(base, f, make, prj, output_path):
-	if prj['type'] == 'html':
-		gnu_make.outputExecutableBuildDirective(f, make, prj, output_path)
+		# linkage
+		for plink in prj['plinks']:
+			f.write(plink['obj'] + ' ')
+		for llink in prj['llinks']:
+			f.write('-l' + llink + ' ')
 	else:
-		base(f, make, prj, output_path)
+		base(f, make, ctx, prj, output_path)
 
-def getProjectObjectBase(base, project, type):
-	exts = {'staticlib': '.o', 'dynamiclib': '.so', 'executable': '.js', 'html': '.html'}
-	return project + exts[type] if type in exts else base(project, type)
+def outputStaticLibBuildDirective(base, f, make, ctx, prj, output_path):
+	if ctx['target'] == 'emscripten':
+		f.write('\t$(CXX) -o ' + prj['obj'] + ' ')
+		gnu_make.outputProjectCompilationUnits(f, make, ctx, prj)
+	else:
+		base(f, make, ctx, prj, output_path)
+
 #------------------------------------------------------------------------------
+def outputProjectBuildDirective(base, f, make, ctx, prj, output_path):
+	if ctx['target'] == 'emscripten' and prj['type'] == 'html':
+		gnu_make.outputExecutableBuildDirective(f, make, ctx, prj, output_path)
+	else:
+		base(f, make, ctx, prj, output_path)
 
+def getProjectObjectBase(base, prj, type, ctx):
+	if ctx['target'] == 'emscripten':
+		exts = {'staticlib': '.o', 'dynamiclib': '.so', 'executable': '.js', 'html': '.html'}
+		return prj + exts[type] if type in exts else base(prj, type, ctx)
+	return base(prj, type, ctx)
+
+#------------------------------------------------------------------------------
 def install():
 	gnu_make.isTargetSupported = api.hook(gnu_make.isTargetSupported, isTargetSupported)
 	gnu_make.getTargetBuildEnv = api.hook(gnu_make.getTargetBuildEnv, getTargetBuildEnv)

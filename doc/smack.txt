@@ -79,6 +79,8 @@ The following keys should ideally be supported by all generators.
 
 * cflags        -   Compiler flags.
 
+	'c++11'				Enable C++11 support.
+
     'debug'             Indicates a debug build.
 	'debug-info'		Generate debug information (implicitly set by 'debug')
     'W0' to 'W4'        Warning level
