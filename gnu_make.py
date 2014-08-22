@@ -249,6 +249,12 @@ def outputWorkspace(f, build_env, make, ctx, output_path):
 
 	f.write('all: %s\n\n' % ' '.join([prj['obj'] for prj in make_projects]))
 
+	f.write('debug: CXX += -g3 -O0\n')
+	f.write('debug: CC += -g3 -O0\n')
+	f.write('debug: all\n')
+
+	f.write('\n')
+
 	f.write('clean:\n')
 	for path in obj_paths:
 		f.write('\trm -drf ' + path + '\n')
