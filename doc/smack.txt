@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 smack - Emmanuel Julien 2013 (ejulien@owloh.com)
-A MIT licensed set of Python 2.7 scripts to generate makefile and IDE projects
+A MIT licensed set of Python 2+ scripts to generate makefile and IDE projects
 -------------------------------------------------------------------------------
 
 Opening Statement
@@ -34,18 +34,18 @@ parent workspace.
 
 Example:
 
-km = smack()
-km.set('cflags', 'use-utf8')    # current context is -/-/-/-/-/-,
+m = smack()
+m.set('cflags', 'use-utf8')     # current context is -/-/-/-/-/-,
                                 # all workspace, project, build on any
                                 # target and arch will use utf8
-km.setWorkspace('ws')
-km.setBuild('Debug')
-km.set('cflags', [debug])       # current context is ws/-/-/Debug/-/- all
+m.setWorkspace('ws')
+m.setBuild('Debug')
+m.set('cflags', [debug])        # current context is ws/-/-/Debug/-/- all
                                 # projects in the ws workspace in Debug
                                 # build will use O0 and debug no matter
                                 # the target architecture
-km.setBuild(None)               # current context is ws/-/-/-/-/-,
-                                # (note: call equivalent to km.setBuild())
+m.setBuild(None)                # current context is ws/-/-/-/-/-,
+                                # (note: call equivalent to m.setBuild())
 
 2) Configuration keys
 -------------------------------------------------------------------------------
